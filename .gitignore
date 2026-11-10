@@ -1,0 +1,9 @@
+node_modules/
+public/
+.env
+.env.*
+.dev.vars
+.wrangler/
+.netlify/
+.vercel/
+.clasp.json

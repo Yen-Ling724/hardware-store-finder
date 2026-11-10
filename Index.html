@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#18372d">
+  <meta name="description" content="搜尋五金行商品、查看示範庫存和店內貨架位置。">
+  <title>工序五金｜店內找貨</title>
+  <style>
+    :root {
+      --forest: #18372d;
+      --forest-2: #23483a;
+      --ink: #1e2924;
+      --muted: #67746c;
+      --paper: #f6f7f2;
+      --white: #fff;
+      --line: #e2e8df;
+      --lime: #d7ec79;
+      --orange: #ed7041;
+      --green: #267448;
+      --red: #b84c35;
+      --shadow: 0 10px 30px rgba(27, 50, 39, .07);
+      --radius: 16px;
+      --sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.65 var(--sans); }
+    button, input, select { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { text-decoration: none; color: inherit; }
+    .top { color: white; background: var(--forest); }
+    .wrap { width: min(1160px, calc(100% - 40px)); margin-inline: auto; }
+    .nav { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark { width: 38px; height: 38px; display: grid; place-items: center; color: var(--forest); background: var(--lime); border-radius: 11px; font-size: 21px; font-weight: 800; transform: rotate(-3deg); }
+    .brand strong { display: block; font-size: 17px; letter-spacing: .08em; line-height: 1.2; }
+    .brand small { color: #b7c6bd; font-size: 9px; letter-spacing: .18em; }
+    .nav-right { display: flex; align-items: center; gap: 20px; color: #d7e0da; font-size: 12px; }
+    .store-pill { border: 1px solid rgba(255,255,255,.22); border-radius: 999px; padding: 7px 12px; }
+    .store-dot { display: inline-block; width: 7px; height: 7px; background: var(--lime); border-radius: 50%; margin-right: 7px; }
+    .hero { padding: 60px 0 63px; display: grid; grid-template-columns: 1.15fr .85fr; align-items: center; gap: 35px; }
+    .overline { color: var(--lime); font-size: 11px; font-weight: 700; letter-spacing: .16em; }
+    h1 { font-size: clamp(34px, 4.6vw, 54px); letter-spacing: -.035em; line-height: 1.24; margin: 13px 0 13px; }
+    .hero p { color: #c4d1c9; margin: 0 0 25px; font-size: 14px; }
+    .searchbox { display: flex; gap: 8px; padding: 7px; background: white; border-radius: 13px; box-shadow: 0 12px 32px rgba(0,0,0,.16); max-width: 690px; }
+    .searchicon { align-self: center; color: #6c7b71; padding-left: 10px; font-size: 20px; }
+    .searchbox input { flex: 1; width: 0; border: 0; outline: 0; color: var(--ink); min-height: 46px; padding: 0 6px; background: transparent; }
+    .searchbox input::placeholder { color: #929d95; }
+    .searchbox button { border: 0; border-radius: 9px; background: var(--orange); color: white; font-weight: 700; padding: 0 24px; cursor: pointer; transition: background .2s ease, transform .2s ease; }
+    .searchbox button:hover { background: #d85e31; transform: translateY(-1px); }
+    .hero-hints { display: flex; align-items: center; gap: 9px; margin-top: 12px; color: #b8c7be; font-size: 10px; }
+    .hint { border: 1px solid rgba(255,255,255,.18); padding: 3px 8px; border-radius: 999px; }
+    .photo-cta { display: inline-flex; align-items: center; gap: 9px; margin-top: 15px; padding: 10px 13px; border: 1px solid rgba(215,236,121,.42); border-radius: 9px; color: var(--lime); background: rgba(255,255,255,.045); cursor: pointer; font-size: 11px; font-weight: 700; }
+    .photo-cta:hover { background: rgba(215,236,121,.1); }
+    .photo-cta span { font-size: 16px; }
+    .photo-help { display: inline; color: #aabcb1; margin-left: 9px; font-size: 10px; }
+    .match-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin: -2px 0 9px; }
+    .match-tags span { color: #738078; font-size: 9px; margin-right: 2px; }
+    .match-tags i { color: #315d3e; background: #edf5e8; border-radius: 999px; padding: 2px 6px; font-size: 9px; font-style: normal; }
+    .photo-dialog { width: min(470px, calc(100% - 26px)); padding: 0; border: 1px solid #e0e7dd; border-radius: 18px; color: var(--ink); background: white; box-shadow: 0 26px 90px rgba(0,0,0,.28); }
+    .photo-dialog::backdrop { background: rgba(13,27,21,.67); backdrop-filter: blur(3px); }
+    .photo-dialog-inner { padding: 24px; }
+    .dialog-top { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+    .dialog-top h2 { font-size: 20px; margin: 0 0 5px; }
+    .dialog-top p { color: var(--muted); font-size: 11px; margin: 0; }
+    .dialog-close { width: 32px; height: 32px; flex: 0 0 auto; border: 1px solid var(--line); border-radius: 50%; background: white; color: #526057; cursor: pointer; font-size: 18px; }
+    .upload-label { display: grid; place-items: center; min-height: 176px; margin: 19px 0 13px; border: 1px dashed #aebcac; border-radius: 13px; color: #58675d; background: #f7f9f4; text-align: center; cursor: pointer; overflow: hidden; }
+    .upload-label:hover { border-color: #6e956f; background: #f1f6ec; }
+    .upload-copy { padding: 18px; }
+    .upload-icon { display: block; font-size: 29px; margin-bottom: 5px; }
+    .upload-copy strong { display: block; font-size: 12px; }
+    .upload-copy small { display: block; margin-top: 4px; color: #879288; font-size: 10px; }
+    #photoInput { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .photo-preview { display: none; max-width: 100%; max-height: 240px; object-fit: contain; border-radius: 12px; }
+    .photo-label { display: block; margin: 14px 0 6px; color: #4e5c52; font-size: 11px; font-weight: 700; }
+    .photo-description { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; outline-color: #78996d; color: var(--ink); }
+    .photo-feedback { min-height: 20px; margin: 8px 0 11px; color: #79633a; font-size: 10px; line-height: 1.6; }
+    .photo-submit { width: 100%; min-height: 43px; border: 0; border-radius: 9px; background: var(--forest); color: white; font-weight: 700; cursor: pointer; }
+    .photo-submit:disabled { cursor: not-allowed; opacity: .48; }
+    .photo-demo-results { margin-top: 14px; padding: 13px; border: 1px solid #e5eadf; border-radius: 11px; background: #fbfcf9; }
+    .photo-demo-results[hidden] { display: none; }
+    .photo-demo-results h3 { margin: 0 0 5px; font-size: 12px; }
+    .photo-demo-results p { margin: 0 0 9px; color: #7c6a49; font-size: 10px; line-height: 1.6; }
+    .photo-candidate { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid #edf0eb; font-size: 10px; }
+    .photo-candidate button { border: 0; border-radius: 7px; padding: 6px 8px; color: #fff; background: var(--forest); font-size: 9px; cursor: pointer; white-space: nowrap; }
+    .hero-art { min-height: 230px; position: relative; display: grid; place-items: center; }
+    .tool-orbit { position: absolute; width: min(320px, 100%); aspect-ratio: 1; border: 1px solid rgba(215,236,121,.23); border-radius: 50%; }
+    .tool-orbit::before { content: ""; position: absolute; inset: 28px; border: 1px dashed rgba(215,236,121,.21); border-radius: 50%; }
+    .tool-orbit::after { content: ""; position: absolute; inset: 58px; border: 1px solid rgba(255,255,255,.12); border-radius: 50%; }
+    .tool-emoji { position: absolute; width: 76px; height: 76px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.17); border-radius: 20px; background: #244639; box-shadow: 0 16px 30px rgba(0,0,0,.2); font-size: 35px; }
+    .tool-emoji.one { left: 13%; top: 22%; transform: rotate(-12deg); }
+    .tool-emoji.two { right: 10%; top: 31%; transform: rotate(10deg); }
+    .tool-emoji.three { left: 32%; bottom: 2%; transform: rotate(6deg); }
+    .art-note { position: absolute; right: 0; bottom: 7px; color: #a8bbaf; font-size: 10px; letter-spacing: .12em; }
+    .main { padding: 25px 0 80px; }
+    .notice { background: #fff5dd; color: #66502c; border: 1px solid #f1dfb6; padding: 10px 14px; border-radius: 10px; font-size: 11px; margin: 0 0 24px; }
+    .notice strong { margin-right: 5px; }
+    .main-head { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 17px; }
+    .main-head h2 { font-size: 24px; margin: 0 0 2px; letter-spacing: -.025em; }
+    .main-head p { margin: 0; color: var(--muted); font-size: 12px; }
+    .sort { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 11px; }
+    .sort select { border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); padding: 8px 26px 8px 10px; outline-color: var(--forest-2); }
+    .content-grid { display: grid; grid-template-columns: 220px 1fr; gap: 21px; align-items: start; }
+    .sidebar { border: 1px solid var(--line); border-radius: var(--radius); background: white; padding: 17px; box-shadow: var(--shadow); }
+    .side-title { font-size: 12px; font-weight: 800; margin: 0 0 11px; }
+    .cat-list { display: grid; gap: 4px; }
+    .cat { display: flex; justify-content: space-between; width: 100%; border: 0; background: transparent; border-radius: 8px; padding: 9px 10px; text-align: left; color: #4d5b52; cursor: pointer; font-size: 12px; }
+    .cat:hover, .cat.active { background: #edf3e8; color: var(--forest); font-weight: 700; }
+    .cat-count { color: #929e95; font-size: 10px; }
+    .side-divider { height: 1px; background: var(--line); margin: 16px 0; }
+    .stock-toggle { display: flex; align-items: center; gap: 8px; color: #526057; font-size: 11px; cursor: pointer; }
+    .stock-toggle input { accent-color: var(--green); width: 15px; height: 15px; }
+    .side-tip { margin-top: 14px; padding: 11px; background: #f7f8f4; border-radius: 9px; color: #718076; font-size: 10px; line-height: 1.7; }
+    .results-top { display: flex; align-items: center; justify-content: space-between; margin: 0 0 11px; color: var(--muted); font-size: 11px; }
+    .results-top b { color: var(--ink); }
+    .clear { color: var(--green); background: transparent; border: 0; cursor: pointer; font-size: 11px; }
+    .products { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+    .load-more { display: none; min-height: 42px; margin: 15px auto 0; padding: 0 20px; border: 1px solid #cad7c7; border-radius: 9px; color: var(--forest); background: white; cursor: pointer; font-size: 11px; font-weight: 700; }
+    .load-more:hover { background: #eef4e9; }
+    .product { min-height: 226px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 13px; background: white; padding: 14px; box-shadow: 0 5px 17px rgba(27,50,39,.035); transition: box-shadow .2s, transform .2s, border-color .2s; }
+    .product:hover { transform: translateY(-2px); border-color: #c9d5c8; box-shadow: var(--shadow); }
+    .product-photo { margin-bottom: 10px; height: 150px; border-radius: 11px; overflow: hidden; background: #f1f4ed; }
+    .product-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .product-top { display: flex; justify-content: space-between; align-items: start; gap: 6px; }
+    .product-icon { width: 47px; height: 47px; display: grid; place-items: center; border-radius: 11px; background: #f1f4ed; font-size: 24px; }
+    .stock-badge { border-radius: 999px; padding: 3px 7px; font-size: 9px; white-space: nowrap; }
+    .stock-badge.in { color: #256b42; background: #e9f5ec; }
+    .stock-badge.out { color: #a84631; background: #fbece8; }
+    .product h3 { font-size: 14px; line-height: 1.45; margin: 12px 0 3px; letter-spacing: -.01em; }
+    .spec { color: #818d84; font-size: 10px; margin-bottom: 10px; min-height: 16px; }
+    .product-bottom { margin-top: auto; display: flex; align-items: end; justify-content: space-between; gap: 8px; border-top: 1px solid #edf0eb; padding-top: 10px; }
+    .price { color: var(--ink); font-size: 15px; font-weight: 800; }
+    .price small { color: #869188; font-size: 9px; font-weight: 400; }
+    .location { color: #4d5c52; font-size: 10px; margin-top: 2px; }
+    .loc-btn { min-height: 42px; color: white; background: var(--orange); border: 1px solid var(--orange); border-radius: 9px; padding: 9px 12px; white-space: nowrap; cursor: pointer; font-size: 11px; font-weight: 800; letter-spacing: .02em; box-shadow: 0 3px 8px rgba(237,112,65,.16); transition: background .18s ease, transform .18s ease, box-shadow .18s ease; }
+    .loc-btn:hover { background: #d85e31; border-color: #d85e31; transform: translateY(-1px); box-shadow: 0 5px 12px rgba(237,112,65,.22); }
+    .loc-btn:focus-visible { outline: 3px solid rgba(237,112,65,.32); outline-offset: 2px; }
+    .empty { display: none; text-align: center; border: 1px dashed #cbd6cb; border-radius: 13px; padding: 42px 16px; color: var(--muted); background: rgba(255,255,255,.5); }
+    .empty-icon { font-size: 28px; margin-bottom: 8px; }
+    .map-section { margin-top: 35px; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: white; box-shadow: var(--shadow); }
+    .map-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 19px; border-bottom: 1px solid var(--line); }
+    .map-head h2 { font-size: 16px; margin: 0; }
+    .map-head span { color: var(--muted); font-size: 10px; }
+    .floor-tabs { display: flex; gap: 9px; padding: 12px 18px; border-bottom: 1px solid var(--line); background: #fff; }
+    .floor-tab { display: flex; align-items: center; gap: 9px; min-height: 42px; border: 1px solid #dfe6db; border-radius: 9px; background: #f8faf6; color: #526156; padding: 7px 13px; font: inherit; cursor: pointer; }
+    .floor-tab strong { font-size: 12px; }
+    .floor-tab small { color: #849087; font-size: 9px; }
+    .floor-tab.active { border-color: var(--orange); background: #fff4ee; color: #8c462d; box-shadow: inset 0 0 0 1px var(--orange), 0 0 0 2px rgba(237,112,65,.12); }
+    .map-body { padding: 18px; display: grid; grid-template-columns: 1fr 145px; gap: 14px; background: #fbfcf9; }
+    .aisles { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+    .aisle.floor-hidden { display: none; }
+    .aisle { min-height: 77px; width: 100%; border: 1px solid #dfe6db; border-radius: 9px; background: white; padding: 10px 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; transition: .2s; cursor: pointer; color: inherit; font: inherit; }
+    .aisle:hover { border-color: #9fb69c; background: #f4f8f1; }
+    .aisle:focus-visible { outline: 3px solid rgba(237,112,65,.35); outline-offset: 2px; }
+    .aisle strong { font-size: 12px; color: var(--forest); }
+    .aisle small { color: #77837a; font-size: 9px; margin-top: 3px; }
+    .aisle::after { content: "查看層架"; color: #35734a; font-size: 8px; margin-top: 4px; }
+    .aisle.highlight { border-color: var(--orange); background: #fff4ee; box-shadow: 0 0 0 2px rgba(237,112,65,.13); }
+    .shelf-details { display: none; padding: 19px; border-top: 1px solid var(--line); background: white; }
+    .shelf-details.visible { display: block; animation: reveal .22s ease-out; }
+    @keyframes reveal { from { opacity: .4; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .shelf-detail-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+    .shelf-detail-head h3 { margin: 1px 0 3px; font-size: 16px; }
+    .shelf-detail-head p { margin: 0; color: var(--muted); font-size: 10px; }
+    .shelf-layer-count { flex: 0 0 auto; border-radius: 999px; padding: 6px 10px; color: #315d3e; background: #edf5e8; font-size: 10px; font-weight: 700; }
+    .shelf-layer-count.target { color: #8c462d; background: #fae6dc; box-shadow: inset 0 0 0 1px #edb39c; }
+    .shelf-levels { display: grid; gap: 6px; }
+    .shelf-level { display: grid; grid-template-columns: 94px 1fr; align-items: stretch; min-height: 46px; border: 1px solid #e6ebe3; border-radius: 8px; overflow: hidden; background: #fbfcf9; }
+    .shelf-level.selected { border: 2px solid var(--orange); background: #fff6f1; box-shadow: inset 5px 0 var(--orange), 0 0 0 2px rgba(237,112,65,.12); }
+    .level-label { display: grid; align-content: center; justify-items: center; gap: 3px; color: #506054; background: #f0f3ed; font-size: 11px; font-weight: 700; }
+    .shelf-level.selected .level-label { color: #8c462d; background: #fae6dc; }
+    .target-level-mark { color: white; background: var(--orange); border-radius: 999px; padding: 2px 5px; font-size: 8px; line-height: 1.3; white-space: nowrap; }
+    .level-items { align-self: center; padding: 9px 12px; color: #4a574e; font-size: 11px; }
+    .level-items .empty-level { color: #9aa39b; font-size: 10px; }
+    .level-items small { color: #89948b; margin-left: 5px; font-size: 9px; }
+    .service-desk { border: 1px dashed #b9c8b8; border-radius: 9px; display: grid; place-items: center; color: #66756a; text-align: center; font-size: 10px; background: #eef3e9; }
+    .service-desk b { display: block; font-size: 17px; }
+    .map-legend { display: flex; align-items: center; gap: 8px; margin-top: 11px; color: #879189; font-size: 9px; }
+    .legend-dot { width: 7px; height: 7px; display: inline-block; background: var(--orange); border-radius: 50%; }
+    .footer { padding: 25px 0; color: #7c8980; font-size: 10px; border-top: 1px solid var(--line); }
+    .footer-inner { display: flex; justify-content: space-between; gap: 12px; }
+    .toast { position: fixed; z-index: 5; left: 50%; bottom: 23px; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; border-radius: 999px; background: var(--forest); color: white; padding: 10px 16px; font-size: 11px; box-shadow: 0 9px 28px rgba(0,0,0,.18); transition: .22s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    @media (max-width: 920px) {
+      .hero { grid-template-columns: 1fr .7fr; }
+      .products { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .tool-emoji { width: 65px; height: 65px; font-size: 29px; }
+      .content-grid { grid-template-columns: 190px 1fr; }
+    }
+    @media (max-width: 690px) {
+      .wrap { width: calc(100% - 28px); }
+      .nav { min-height: 65px; }
+      .nav-right { gap: 8px; }
+      .nav-right > span:first-child { display: none; }
+      .hero { grid-template-columns: 1fr; padding: 44px 0 23px; }
+      .hero-art { display: none; }
+      .hero p { max-width: 490px; }
+      .main { padding-top: 17px; }
+      .content-grid { grid-template-columns: 1fr; }
+      .sidebar { padding: 13px; }
+      .cat-list { display: flex; overflow-x: auto; padding-bottom: 2px; }
+      .cat { width: auto; flex: 0 0 auto; white-space: nowrap; }
+      .side-title, .side-divider, .side-tip { display: none; }
+      .stock-toggle { padding: 8px 9px 0; }
+      .map-body { grid-template-columns: 1fr; }
+      .service-desk { min-height: 57px; }
+      .aisles { grid-template-columns: repeat(3, 1fr); }
+      .main-head { align-items: flex-start; flex-direction: column; }
+      .sort { width: 100%; justify-content: flex-end; }
+    }
+    @media (max-width: 440px) {
+      .products { grid-template-columns: 1fr; }
+      .product { min-height: 0; }
+      .hero { padding-top: 35px; }
+      .searchbox { gap: 2px; }
+      .searchbox button { padding: 0 14px; }
+      .hero-hints { flex-wrap: wrap; }
+      .footer-inner { flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap nav">
+      <a class="brand" href="#top" aria-label="工序五金首頁"><span class="brand-mark" aria-hidden="true">工</span><span>      <strong class="store-name-text">工序五金</strong><small id="storeTagline">店內商品快找</small></span></a>
+            <div class="nav-right"><span>店內商品快找</span></div>
+    </div>
+    <section class="hero wrap" id="top">
+      <div>
+        <div class="overline">LESS SEARCHING. MORE DOING.</div>
+        <h1>少繞幾個貨架，<br>直接找到要用的工具。</h1>
+        <p>不確定商品名稱也沒關係。描述外觀、材質、用途或尺寸，一樣能幫你找。</p>
+        <form class="searchbox" id="searchForm" role="search">
+          <span class="searchicon" aria-hidden="true">⌕</span>
+          <input id="searchInput" type="search" aria-label="搜尋商品或描述特徵" placeholder="例如：黑色、可以纏電線的膠帶">
+          <button type="submit">搜尋商品</button>
+        </form>
+        <div class="hero-hints"><span>熱門搜尋</span><button class="hint quick" type="button" data-query="電鑽">電鑽</button><button class="hint quick" type="button" data-query="螺絲">螺絲</button><button class="hint quick" type="button" data-query="捲尺">捲尺</button><button class="hint quick" type="button" data-query="延長線">延長線</button></div>
+        <button class="photo-cta" id="openPhoto" type="button"><span aria-hidden="true">▧</span> 用照片找相似商品</button><small class="photo-help">拍下壞掉的零件，也可以開始找替換品</small>
+      </div>
+      <div class="hero-art" aria-hidden="true"><div class="tool-orbit"></div><div class="tool-emoji one">🔧</div><div class="tool-emoji two">🪛</div><div class="tool-emoji three">🧰</div><div class="art-note">品名・品牌・規格，一次找到</div></div>
+    </section>
+  </header>
+
+  <dialog class="photo-dialog" id="photoDialog" aria-labelledby="photoTitle">
+    <div class="photo-dialog-inner">
+      <div class="dialog-top"><div><h2 id="photoTitle">拍下壞掉的零件</h2><p>拍清楚整體與損壞處；有尺寸標示的話，也可以拍近一點。</p></div><button class="dialog-close" id="closePhoto" type="button" aria-label="關閉">×</button></div>
+      <label class="upload-label" for="photoInput"><span class="upload-copy" id="uploadCopy"><span class="upload-icon" aria-hidden="true">📷</span><strong>拍照或選擇一張照片</strong><small>可只用照片搜尋，描述是選填</small></span><img class="photo-preview" id="photoPreview" alt="已選擇的零件照片預覽"></label>
+      <input id="photoInput" type="file" accept="image/*" capture="environment">
+      <label class="photo-label" for="photoDescription">補充特徵（選填，不填也可以搜尋）</label>
+      <input class="photo-description" id="photoDescription" type="text" placeholder="例如：黑色軟膠，包在電線外面">
+      <div class="photo-feedback" id="photoFeedback" aria-live="polite">選好照片後可直接開始。照片在你的手機或電腦上辨識，不會上傳；結果只能判斷大致類別。</div>
+      <button class="photo-submit" id="photoSearch" type="button" disabled>依照片搜尋商品</button>
+      <div class="photo-demo-results" id="photoDemoResults" hidden aria-live="polite"></div>
+    </div>
+  </dialog>
+
+  <main class="main wrap">
+    <div class="notice"><strong>溫馨提醒</strong> 商品資訊、庫存與貨架位置以門市現場為準。</div>
+    <div class="main-head">
+      <div><h2>店內商品</h2><p>先找規格，再按貨架位置取貨。</p></div>
+      <label class="sort">排序
+        <select id="sortSelect" aria-label="商品排序"><option value="recommended">推薦排序</option><option value="price-asc">價格由低到高</option><option value="price-desc">價格由高到低</option><option value="name">商品名稱</option></select>
+      </label>
+    </div>
+    <div class="content-grid">
+      <aside class="sidebar" aria-label="商品篩選">
+        <h3 class="side-title">商品分類</h3>
+        <div class="cat-list" id="categoryList">
+          <button class="cat active" data-category="全部">全部商品 <span class="cat-count" id="allCount"></span></button>
+          <button class="cat" data-category="電動工具">電動工具</button>
+          <button class="cat" data-category="手工具">手工具</button>
+          <button class="cat" data-category="螺絲與固定">螺絲與固定</button>
+          <button class="cat" data-category="水電材料">水電材料</button>
+          <button class="cat" data-category="油漆與耗材">油漆與耗材</button>
+          <button class="cat" data-category="安全防護">安全防護</button>
+          <button class="cat" data-category="門窗五金">門窗五金</button>
+          <button class="cat" data-category="園藝與戶外">園藝與戶外</button>
+          <button class="cat" data-category="清潔與收納">清潔與收納</button>
+          <button class="cat" data-category="建材與黏著">建材與黏著</button>
+        </div>
+        <div class="side-divider"></div>
+        <label class="stock-toggle"><input type="checkbox" id="inStockOnly"> 只看有現貨商品</label>
+        <div class="side-tip">找不到商品嗎？<br>試著搜尋品牌、尺寸或常用別名。</div>
+      </aside>
+      <section aria-label="商品搜尋結果">
+        <div class="results-top"><span id="resultSummary">找到 <b>0</b> 項商品</span><button class="clear" id="clearFilters" type="button">清除搜尋與篩選</button></div>
+        <div class="products" id="products"></div>
+        <button class="load-more" id="loadMore" type="button">載入更多商品</button>
+        <div class="empty" id="empty"><div class="empty-icon">🔎</div><strong>沒有找到符合的商品</strong><br><span>試試其他關鍵字，或切換商品分類。</span></div>
+      </section>
+    </div>
+
+    <section class="map-section" id="storeMap" aria-labelledby="mapTitle">
+      <div class="map-head"><h2 id="mapTitle">簡易店內分區圖</h2><span id="mapHint">選擇樓層，再點選貨架查看各層商品</span></div>
+      <div class="floor-tabs" id="floorTabs" role="group" aria-label="選擇店內樓層">
+      </div>
+      <div class="map-body">
+        <div>
+          <div class="aisles" id="aisles">
+          </div>
+          <div class="map-legend"><i class="legend-dot"></i>商品所在分區</div>
+        </div>
+        <div class="service-desk"><div><b>服務台</b>入口／結帳處</div></div>
+      </div>
+      <div class="shelf-details" id="shelfDetails" aria-live="polite">
+        <div class="shelf-detail-head"><div><h3 id="shelfName">A-01 貨架分層</h3><p>由上往下查看每層商品；橘色標記會指出目前查找商品所在層。</p></div><span class="shelf-layer-count" id="shelfLayerCount">共 5 層</span></div>
+        <div class="shelf-levels" id="shelfLevels"></div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer"><div class="wrap footer-inner"><span>© <span class="store-name-text">工序五金</span>｜店內商品快找</span><span>商品資訊以門市現場為準</span></div></footer>
+  <div class="toast" id="toast" role="status"></div>
+
+  <script>
+    // 內建示範資料：只在本機直接開檔預覽時使用；部署後資料來自 Google Sheets
+    const demoInventory = [
+      { name: '震動電鑽 13mm', brand: 'BOSCH', spec: 'GSB 13 RE｜含側把手', price: 1690, stock: 8, aisle: 'A-01', level: 3, category: '電動工具', icon: '🔩', keywords: '博世 電鑽 震動鑽 鑽孔 bosch gsb 13re', features: ['插電', '鑽孔', '打洞', '鑽牆', '水泥牆', '金屬', '木材', '側把手', '握把', '黑色'] },
+      { name: '充電起子機 12V', brand: 'Makita', spec: 'DF333DWYE｜雙電池組', price: 2980, stock: 4, aisle: 'A-01', level: 2, category: '電動工具', icon: '🪛', keywords: '牧田 makita 起子 電動起子 電鑽', features: ['無線', '充電', '電池', '鎖螺絲', '鑽孔', '手持', '握把', '輕巧', '木工'] },
+      { name: '高速鋼鑽頭 10入組', brand: '工序選品', spec: '1.5–6.5mm｜金屬木材用', price: 299, stock: 16, aisle: 'A-02', level: 2, category: '電動工具', icon: '🌀', keywords: '鑽尾 鑽頭 鑽孔 配件', features: ['尖頭', '螺旋', '金屬', '木材', '鑽洞', '打洞', '細長', '多尺寸', '配電鑽'] },
+      { name: '鋼捲尺 5.5m', brand: 'Tajima', spec: '雙面刻度｜自動鎖定', price: 159, stock: 25, aisle: 'B-01', level: 3, category: '手工具', icon: '📏', keywords: '田島 tajima 捲尺 卷尺 尺', features: ['量長度', '測量', '可伸縮', '拉出來', '自動回捲', '黃色', '細長金屬片', '公分刻度'] },
+      { name: '活動扳手 10吋', brand: '工序選品', spec: '最大開口 30mm｜鍍鉻鋼', price: 189, stock: 12, aisle: 'B-02', level: 3, category: '手工具', icon: '🔧', keywords: '板手 扳手 活動板手 活動扳手 wrench', features: ['轉螺帽', '轉螺栓', '開口可調', '夾住六角', '金屬長柄', '鉗口', '亮銀色', '手動工具'] },
+      { name: '十字起子 PH2', brand: 'VESSEL', spec: '軸長 100mm｜防滑握柄', price: 95, stock: 20, aisle: 'B-02', level: 2, category: '手工具', icon: '🪛', keywords: '威威 付士頭 起子 screwdriver', features: ['十字頭', '十字形', '轉螺絲', '手動', '長桿', '防滑握柄', '紅色握把', '螺絲起子'] },
+      { name: '尼龍壁虎螺絲組', brand: '工序選品', spec: 'M8 × 40mm｜10組入', price: 59, stock: 42, aisle: 'C-01', level: 3, category: '螺絲與固定', icon: '🔩', keywords: '膨脹螺絲 螺絲 壁虎 塑膠塞 m8 固定 螺絲釘', features: ['牆上固定', '牆壁固定', '固定重物', '壁掛', '塑膠', '尼龍', '膨脹', '附螺絲', 'M8', '白色', '水泥牆'] },
+      { name: '六角螺帽 M8', brand: '工序選品', spec: '不鏽鋼｜5入', price: 35, stock: 31, aisle: 'C-01', level: 2, category: '螺絲與固定', icon: '⚙️', keywords: '螺帽 螺母 六角 nuts 不鏽鋼', features: ['不鏽鋼', '金屬', '銀色', '六角形', '螺絲配件', 'M8', '螺栓固定', '小顆'] },
+      { name: '補土膏 1kg', brand: '虹牌', spec: '室內牆面修補｜白色', price: 129, stock: 0, aisle: 'C-02', level: 3, category: '油漆與耗材', icon: '🪣', keywords: '補牆 補土 修補 虹牌 油漆', features: ['白色', '膏狀', '填補裂縫', '牆面修補', '刮刀施工', '室內', '補洞', '油漆前使用'] },
+      { name: 'PVC 水管 1/2吋', brand: '南亞', spec: '4尺｜厚管', price: 42, stock: 18, aisle: 'D-01', level: 2, category: '水電材料', icon: '🧱', keywords: '塑膠管 水管 pvc 管子 南亞 四尺', features: ['白色', '塑膠', '硬管', '圓管', '輸送水', '排水', '水管', '可裁切', '直管'] },
+      { name: '止洩帶 12mm', brand: '工序選品', spec: '水電用｜10m', price: 18, stock: 53, aisle: 'D-02', level: 1, category: '水電材料', icon: '🧵', keywords: '止水帶 止洩膠帶 teflon 水龍頭', features: ['白色', '薄膜', '纏繞', '螺牙', '水管接頭', '防漏水', '密封', '細捲'] },
+      { name: 'PVC 電氣絕緣膠帶', brand: '3M', spec: '黑色｜19mm × 10m', price: 32, stock: 37, aisle: 'E-01', level: 2, category: '水電材料', icon: '🟦', keywords: '三米 電火布 膠布 電工膠帶 3m 絕緣 tape', features: ['黑色', '有彈性', '黏性', '膠帶', '纏電線', '包電線', '電線絕緣', '防磨損', '修補線材'] },
+      { name: '延長線 3孔 3m', brand: '太星電工', spec: '過載保護｜15A', price: 299, stock: 9, aisle: 'E-02', level: 2, category: '水電材料', icon: '🔌', keywords: '延長插座 插線板 延長線 電線', features: ['白色', '電源線', '插座', '多孔', '延長距離', '三公尺', '接電', '插頭'] },
+      { name: '防霧護目鏡', brand: '工序選品', spec: '透明鏡片｜可調式', price: 99, stock: 0, aisle: 'F-01', level: 3, category: '安全防護', icon: '🥽', keywords: '眼鏡 安全眼鏡 防護 防塵', features: ['透明', '眼睛防護', '防飛屑', '防塵', '戴在眼睛上', '可調鬆緊', '塑膠鏡片', '防霧'] },
+      { name: '止滑工作手套 M號', brand: '工序選品', spec: '掌面止滑｜一雙', price: 69, stock: 14, aisle: 'F-01', level: 2, category: '安全防護', icon: '🧤', keywords: '手套 防護手套 工作手套', features: ['手部防護', '止滑', '掌面粗糙', '戴在手上', '工作用', '防磨', '布面', '手掌橡膠'] },
+      { name: '鋁梯 4尺', brand: '工序選品', spec: '雙面梯｜荷重100kg', price: 1180, stock: 3, aisle: 'F-02', level: 1, category: '安全防護', icon: '🪜', keywords: '梯子 梯具 伸縮梯 鋁梯', features: ['鋁合金', '金屬', '可以爬高', '踩踏', '梯階', '折疊', '雙面', '長梯'] },
+      { name: '充電衝擊起子機 18V', brand: 'Makita', spec: 'DTD152｜單機身', price: 3280, stock: 5, aisle: 'A-01', level: 4, category: '電動工具', icon: '🪛', keywords: '牧田 makita 衝擊 起子 電池', features: ['無線', '電池', '強力鎖螺絲', '充電工具', '手持', '木工', '裝潢'] },
+      { name: '砂輪機 4吋', brand: 'BOSCH', spec: 'GWS 700｜切磨兩用', price: 1490, stock: 6, aisle: 'A-01', level: 1, category: '電動工具', icon: '⚙️', keywords: '博世 研磨機 角磨機 切割機 bosch', features: ['插電', '旋轉切割', '金屬研磨', '磨鐵', '磨平', '圓盤工具', '手持'] },
+      { name: '木工圓鋸片 7吋', brand: '工序選品', spec: '40齒｜木材切割', price: 260, stock: 13, aisle: 'A-02', level: 3, category: '電動工具', icon: '🪚', keywords: '鋸片 圓鋸 木工 鋸木', features: ['圓形鋸片', '木材', '切木板', '鋸齒', '電動圓鋸配件'] },
+      { name: '瓷磚鑽頭 6mm', brand: '工序選品', spec: '三角刀頭｜1支', price: 79, stock: 22, aisle: 'A-02', level: 1, category: '電動工具', icon: '🔩', keywords: '磁磚鑽頭 磁磚 鑽尾', features: ['尖頭', '三角頭', '磁磚', '瓷磚', '玻璃', '打洞', '細長'] },
+      { name: '砂輪切片 4吋', brand: '工序選品', spec: '薄型切斷片｜5片裝', price: 95, stock: 28, aisle: 'A-02', level: 4, category: '電動工具', icon: '⭕', keywords: '切片 切鐵 切割 砂輪片', features: ['圓片', '薄片', '切金屬', '切鐵', '砂輪機配件'] },
+      { name: '雷射水平儀 2線', brand: '工序選品', spec: '紅光｜磁吸底座', price: 890, stock: 4, aisle: 'B-01', level: 2, category: '手工具', icon: '📐', keywords: '水平器 雷射水平 水平線', features: ['紅色雷射', '投射水平線', '直線', '校正', '定位', '裝潢測量'] },
+      { name: '游標卡尺 150mm', brand: '工序選品', spec: '不鏽鋼｜公英制雙刻度', price: 240, stock: 7, aisle: 'B-01', level: 4, category: '手工具', icon: '📏', keywords: '卡尺 游標尺 測量 caliper', features: ['量內徑', '量外徑', '量厚度', '精細刻度', '金屬尺', '小尺寸測量'] },
+      { name: '尖嘴鉗 8吋', brand: '工序選品', spec: '絕緣握柄｜長嘴', price: 149, stock: 11, aisle: 'B-02', level: 4, category: '手工具', icon: '🔧', keywords: '尖嘴鉗 鉗子 夾線', features: ['長尖嘴', '夾小零件', '剪線', '夾電線', '紅黑握把', '手動工具'] },
+      { name: '鋼絲鉗 8吋', brand: '工序選品', spec: '省力型｜剪線夾持', price: 169, stock: 8, aisle: 'B-02', level: 5, category: '手工具', icon: '🗜️', keywords: '老虎鉗 鋼絲鉗 剪線鉗', features: ['鉗子', '剪鐵線', '夾東西', '握把', '金屬工具', '電工工具'] },
+      { name: '美工刀 18mm', brand: '工序選品', spec: '金屬刀槽｜附1片刀片', price: 45, stock: 30, aisle: 'B-02', level: 1, category: '手工具', icon: '🔪', keywords: '割紙刀 壁紙刀 刀片 美工刀', features: ['切紙', '切紙箱', '長刀片', '可折刀片', '滑動推鈕', '手持切割'] },
+      { name: 'L型六角扳手組', brand: '工序選品', spec: '公制9支｜1.5–10mm', price: 129, stock: 17, aisle: 'B-02', level: 1, category: '手工具', icon: '🔩', keywords: '六角板手 內六角 扳手組 allen key', features: ['L形', '六角形', '轉內六角螺絲', '一組多尺寸', '金屬棒', '自行車維修'] },
+      { name: '木螺絲十字頭 4×25mm', brand: '工序選品', spec: '鍍鋅｜100入', price: 49, stock: 35, aisle: 'C-01', level: 4, category: '螺絲與固定', icon: '🔩', keywords: '木螺絲 螺釘 釘子 固定木板', features: ['尖尾', '木材固定', '十字槽', '銀色', '小螺絲', '鎖木板'] },
+      { name: '白鐵自攻螺絲 4×16mm', brand: '工序選品', spec: '不鏽鋼｜50入', price: 55, stock: 26, aisle: 'C-01', level: 1, category: '螺絲與固定', icon: '🔩', keywords: '白鐵螺絲 自攻牙 螺絲釘 不鏽鋼', features: ['不鏽鋼', '尖尾', '金屬板固定', '白鐵', '銀色', '十字槽'] },
+      { name: '平墊片 M8', brand: '工序選品', spec: '鍍鋅｜20入', price: 25, stock: 19, aisle: 'C-01', level: 1, category: '螺絲與固定', icon: '⭕', keywords: '華司 墊圈 墊片 washer', features: ['圓形薄片', '中間有洞', '墊在螺帽下', '金屬', '銀色', 'M8'] },
+      { name: '束帶 200mm', brand: '工序選品', spec: '白色｜100條入', price: 39, stock: 41, aisle: 'C-01', level: 5, category: '螺絲與固定', icon: '〰️', keywords: '尼龍束帶 束線帶 束線 cable tie', features: ['塑膠長條', '白色', '綁電線', '束起來', '拉緊固定', '一次性'] },
+      { name: '中性矽利康 透明', brand: '工序選品', spec: '300ml｜防霉型', price: 109, stock: 10, aisle: 'C-02', level: 2, category: '油漆與耗材', icon: '🧴', keywords: '矽膠 填縫膠 玻璃膠 密封膠', features: ['透明膠', '填縫', '防水密封', '浴室', '打膠槍使用', '黏接', '軟管'] },
+      { name: '布膠帶 48mm 灰色', brand: '工序選品', spec: '寬版｜10m', price: 69, stock: 15, aisle: 'C-02', level: 1, category: '油漆與耗材', icon: '🩹', keywords: '布膠帶 封箱膠帶 duct tape 強力膠帶', features: ['灰色', '寬膠帶', '布面', '強力黏貼', '修補', '封箱', '可撕'] },
+      { name: '砂紙 120號', brand: '工序選品', spec: '耐水砂紙｜5張裝', price: 35, stock: 24, aisle: 'C-02', level: 2, category: '油漆與耗材', icon: '🟫', keywords: '砂紙 磨砂 細砂紙 打磨', features: ['粗糙紙面', '打磨木頭', '磨平表面', '修整', '研磨耗材'] },
+      { name: '油漆平刷 2吋', brand: '工序選品', spec: '木柄｜合成毛', price: 42, stock: 18, aisle: 'C-02', level: 4, category: '油漆與耗材', icon: '🖌️', keywords: '油漆刷 刷子 塗刷', features: ['刷毛', '木柄', '刷油漆', '塗料施工', '扁平刷頭'] },
+      { name: 'PVC彎頭 1/2吋', brand: '南亞', spec: '90度｜厚管用', price: 12, stock: 44, aisle: 'D-01', level: 3, category: '水電材料', icon: '↪️', keywords: '水管彎頭 接頭 轉彎 pvc elbow', features: ['白色塑膠', 'L形', '水管轉彎', '管件', '接水管', '90度'] },
+      { name: '水龍頭起泡器 22mm', brand: '工序選品', spec: '外牙｜附墊圈', price: 59, stock: 6, aisle: 'D-02', level: 3, category: '水電材料', icon: '🚰', keywords: '水龍頭濾網 起泡頭 出水嘴', features: ['小圓頭', '水龍頭末端', '省水', '出水變細', '金屬網', '外牙'] },
+      { name: '洗手台排水軟管 1m', brand: '工序選品', spec: '伸縮型｜附接頭', price: 89, stock: 9, aisle: 'D-02', level: 4, category: '水電材料', icon: '〰️', keywords: '排水管 浴室軟管 洗手台 水槽', features: ['灰白色', '可彎曲', '伸縮', '排水', '洗手台下方', '塑膠軟管'] },
+      { name: '電源線 2.0mm²', brand: '太星電工', spec: '黑色｜單芯 10m', price: 180, stock: 7, aisle: 'E-01', level: 3, category: '水電材料', icon: '〰️', keywords: '電纜 電線 黑線 電工線', features: ['黑色', '單芯線', '導電', '電線', '剪裁長度', '配電使用'] },
+      { name: '雙孔插座 15A', brand: '國際牌', spec: '白色｜埋入式', price: 79, stock: 12, aisle: 'E-02', level: 3, category: '水電材料', icon: '🔌', keywords: '插頭 插座 outlet 國際牌', features: ['白色方形', '牆壁插座', '兩個插孔', '電源', '埋牆'] },
+      { name: '單切開關 白色', brand: '國際牌', spec: '埋入式｜單開', price: 65, stock: 16, aisle: 'E-02', level: 2, category: '水電材料', icon: '🔘', keywords: '電燈開關 單開 switch', features: ['白色方形', '牆壁開關', '控制電燈', '按壓', '埋牆'] },
+      { name: 'LED燈泡 9W 黃光', brand: '舞光', spec: 'E27燈頭｜暖白色', price: 69, stock: 21, aisle: 'E-02', level: 1, category: '水電材料', icon: '💡', keywords: '燈泡 電燈 led 黃色燈泡', features: ['發光', '黃色暖光', '螺旋燈頭', '照明', '省電'] },
+      { name: 'KN95防塵口罩 3入', brand: '工序選品', spec: '立體折疊｜耳掛式', price: 49, stock: 18, aisle: 'F-01', level: 4, category: '安全防護', icon: '😷', keywords: '口罩 防塵 防護面罩', features: ['戴在口鼻', '防粉塵', '白色', '折疊', '耳掛', '施工防護'] },
+      { name: '泡棉耳塞 5副', brand: '工序選品', spec: '橘色｜降噪型', price: 39, stock: 23, aisle: 'F-01', level: 1, category: '安全防護', icon: '🟠', keywords: '耳塞 防噪音 隔音 耳朵', features: ['橘色小顆', '塞耳朵', '防噪音', '泡棉', '工作防護'] },
+      { name: '塑膠工具箱 16吋', brand: '工序選品', spec: '上蓋收納格｜提把', price: 299, stock: 5, aisle: 'F-02', level: 2, category: '安全防護', icon: '🧰', keywords: '工具盒 收納箱 零件盒 工具袋', features: ['黑色盒子', '收納工具', '手提把', '可開蓋', '分隔小格', '整理零件'] },
+      { name: '球型門鎖 60mm', brand: '工序選品', spec: '不鏽鋼外觀｜附鑰匙2支', price: 249, stock: 7, aisle: 'G-01', level: 3, category: '門窗五金', icon: '🚪', keywords: '門把 門鎖 球鎖 房門鎖', features: ['圓形門把', '附鑰匙', '房門', '門鎖更換', '不鏽鋼色', '鎖門'] },
+      { name: '不鏽鋼合頁 4吋', brand: '工序選品', spec: '平面鉸鏈｜2片裝', price: 89, stock: 18, aisle: 'G-01', level: 2, category: '門窗五金', icon: '🪚', keywords: '鉸鏈 門鉸鏈 合頁 hinge', features: ['長方形金屬片', '中間轉軸', '門片轉動', '家具五金', '銀色', '固定門板'] },
+      { name: '橡膠門擋', brand: '工序選品', spec: '地板固定式｜灰色', price: 49, stock: 12, aisle: 'G-01', level: 1, category: '門窗五金', icon: '🚪', keywords: '門止 門檔 門擋 防撞', features: ['楔形橡膠', '擋住門', '防止撞牆', '地板固定', '灰色', '止門'] },
+      { name: '門眼貓眼 180度', brand: '工序選品', spec: '適用門厚 35–55mm', price: 99, stock: 4, aisle: 'G-01', level: 4, category: '門窗五金', icon: '👁️', keywords: '貓眼 門鏡 門上觀景孔', features: ['門上小孔', '廣角鏡片', '從門內往外看', '訪客查看', '金屬圓筒'] },
+      { name: '掛鎖 40mm', brand: '工序選品', spec: '銅芯｜附3支鑰匙', price: 119, stock: 16, aisle: 'G-01', level: 5, category: '門窗五金', icon: '🔒', keywords: '鎖頭 掛鎖 鐵門鎖 padlock', features: ['U型鎖環', '鑰匙鎖', '鎖箱子', '鎖鐵門', '銀色', '小鎖'] },
+      { name: '鋁窗月牙鎖', brand: '工序選品', spec: '左右通用｜附螺絲', price: 75, stock: 9, aisle: 'G-02', level: 2, category: '門窗五金', icon: '🌙', keywords: '窗戶鎖 月牙鎖 窗扣 鋁窗', features: ['窗戶扣鎖', '月牙形', '鋁窗', '左右滑窗', '白色金屬', '附螺絲'] },
+      { name: '櫥櫃把手 96mm', brand: '工序選品', spec: '霧黑｜附固定螺絲', price: 69, stock: 13, aisle: 'G-02', level: 3, category: '門窗五金', icon: '〰️', keywords: '抽屜把手 櫃子拉手 衣櫃把手', features: ['霧黑色', '櫃門拉手', '兩孔固定', '家具配件', '抽屜握把'] },
+      { name: '抽屜滑軌 12吋', brand: '工序選品', spec: '三節式｜一組2支', price: 189, stock: 6, aisle: 'G-02', level: 4, category: '門窗五金', icon: '↔️', keywords: '抽屜軌道 滑軌 櫥櫃導軌', features: ['抽屜伸縮', '金屬長軌', '家具修理', '滑動', '兩側一組'] },
+      { name: 'L型角鐵片 2孔', brand: '工序選品', spec: '鍍鋅｜4入', price: 39, stock: 22, aisle: 'G-02', level: 1, category: '門窗五金', icon: '📐', keywords: '角碼 角鐵 連接片 固定架', features: ['L形金屬片', '兩面直角', '木板連接', '補強固定', '有螺絲孔'] },
+      { name: 'S型掛勾 3吋', brand: '工序選品', spec: '不鏽鋼｜2入', price: 29, stock: 30, aisle: 'G-02', level: 1, category: '門窗五金', icon: '🪝', keywords: '掛鉤 掛勾 S勾 吊掛', features: ['S字形', '金屬勾子', '吊掛物品', '兩端開口', '銀色'] },
+      { name: '家具萬向輪 2吋', brand: '工序選品', spec: '含煞車｜1入', price: 55, stock: 11, aisle: 'G-02', level: 5, category: '門窗五金', icon: '⚙️', keywords: '輪子 椅輪 活動輪 腳輪', features: ['小輪子', '家具底部', '可轉向', '帶煞車', '推動收納櫃'] },
+      { name: '修枝剪 8吋', brand: '工序選品', spec: '碳鋼刀片｜安全鎖扣', price: 169, stock: 8, aisle: 'H-01', level: 3, category: '園藝與戶外', icon: '✂️', keywords: '園藝剪 果樹剪 花剪 修樹', features: ['剪樹枝', '剪花', '彈簧手柄', '鋒利刀刃', '園藝工具', '手持剪刀'] },
+      { name: '園藝小鏟', brand: '工序選品', spec: '木柄｜移植用', price: 69, stock: 12, aisle: 'H-01', level: 2, category: '園藝與戶外', icon: '🪏', keywords: '小鏟子 花鏟 種花 挖土', features: ['挖土', '種植盆栽', '尖頭金屬鏟', '短木柄', '園藝工具'] },
+      { name: '園藝手套 L號', brand: '工序選品', spec: '掌面防滑｜一雙', price: 79, stock: 10, aisle: 'H-01', level: 1, category: '園藝與戶外', icon: '🧤', keywords: '種花手套 gardening gloves 園藝', features: ['戴在手上', '種花', '翻土', '掌面止滑', '防刺防髒', '布手套'] },
+      { name: '花園水管 15m', brand: '工序選品', spec: '綠色｜含噴頭接頭', price: 329, stock: 5, aisle: 'H-02', level: 3, category: '園藝與戶外', icon: '〰️', keywords: '澆花水管 灑水管 軟管', features: ['綠色長軟管', '澆花', '灑水', '戶外用', '接水龍頭', '可捲起'] },
+      { name: '可調式灑水噴槍', brand: '工序選品', spec: '七段水型｜快接頭', price: 149, stock: 7, aisle: 'H-02', level: 2, category: '園藝與戶外', icon: '🚿', keywords: '水槍 澆花噴頭 噴水器', features: ['手持噴槍', '接水管', '多段水柱', '澆花洗車', '握把扳機'] },
+      { name: '水管快接頭 1/2吋', brand: '工序選品', spec: '塑膠｜2入', price: 39, stock: 17, aisle: 'H-02', level: 1, category: '園藝與戶外', icon: '🔗', keywords: '水管接頭 快速接頭 花園水管', features: ['塑膠接頭', '快速插拔', '接水管兩端', '黑綠色', '戶外澆水'] },
+      { name: '鍍鋅鐵絲 1.6mm', brand: '工序選品', spec: '10m｜可裁剪', price: 45, stock: 14, aisle: 'H-02', level: 4, category: '園藝與戶外', icon: '〰️', keywords: '鐵線 鐵絲 綁枝條 金屬線', features: ['銀色細線', '金屬', '綁東西', '固定植物', '可用鉗子剪', '園藝綁線'] },
+      { name: '塑膠掃把', brand: '工序選品', spec: '室內外兩用｜含長柄', price: 99, stock: 9, aisle: 'I-01', level: 3, category: '清潔與收納', icon: '🧹', keywords: '掃地 掃帚 地刷 清潔', features: ['長柄', '掃地面', '塑膠刷毛', '掃灰塵', '室內外清潔'] },
+      { name: '平板拖把替換布', brand: '工序選品', spec: '超細纖維｜2片入', price: 69, stock: 13, aisle: 'I-01', level: 2, category: '清潔與收納', icon: '🧽', keywords: '拖把布 拖地 替換布 清潔布', features: ['擦地板', '超細纖維', '可水洗', '拖把替換頭', '吸水'] },
+      { name: '硬毛清潔刷', brand: '工序選品', spec: '短柄｜浴室磁磚用', price: 39, stock: 18, aisle: 'I-01', level: 1, category: '清潔與收納', icon: '🧼', keywords: '刷子 刷地板 浴室刷 洗衣刷', features: ['硬刷毛', '短手柄', '刷磁磚縫', '洗浴室', '刷污垢'] },
+      { name: '塑膠水桶 12L', brand: '工序選品', spec: '附提把｜藍色', price: 59, stock: 8, aisle: 'I-01', level: 4, category: '清潔與收納', icon: '🪣', keywords: '水桶 拖地桶 洗車桶 容器', features: ['藍色桶子', '提把', '裝水', '清潔用', '塑膠容器'] },
+      { name: '收納箱 30L', brand: '工序選品', spec: '透明上蓋｜可堆疊', price: 199, stock: 7, aisle: 'I-02', level: 3, category: '清潔與收納', icon: '📦', keywords: '整理箱 塑膠箱 置物箱 收納盒', features: ['透明箱子', '整理雜物', '上蓋', '可堆疊', '塑膠收納'] },
+      { name: '透明零件盒 12格', brand: '工序選品', spec: '活動隔板｜手提式', price: 129, stock: 6, aisle: 'I-02', level: 2, category: '清潔與收納', icon: '🗃️', keywords: '零件箱 分隔盒 螺絲盒 收納', features: ['透明小格', '分類螺絲', '可調隔板', '手提盒', '收納小零件'] },
+      { name: '尼龍繩 6mm', brand: '工序選品', spec: '白色｜10m', price: 55, stock: 10, aisle: 'I-02', level: 1, category: '清潔與收納', icon: '🪢', keywords: '繩子 細繩 綁繩 晾衣繩', features: ['白色繩子', '綁東西', '晾曬', '耐磨', '尼龍編織'] },
+      { name: '快乾水泥 1kg', brand: '工序選品', spec: '修補用｜灰色粉料', price: 39, stock: 15, aisle: 'J-01', level: 2, category: '建材與黏著', icon: '🧱', keywords: '水泥粉 補牆 灰泥 修補建材', features: ['灰色粉末', '加水攪拌', '修補牆面', '填洞', '小包裝建材'] },
+      { name: '玻璃膠槍 9吋', brand: '工序選品', spec: '手動推桿｜適用矽利康', price: 99, stock: 8, aisle: 'J-01', level: 3, category: '建材與黏著', icon: '🛠️', keywords: '矽利康槍 打膠槍 填縫槍', features: ['長柄工具', '擠出膠管', '手動扳機', '施工打膠', '金屬框'] },
+      { name: '油漆滾筒 4吋', brand: '工序選品', spec: '短毛｜附滾筒架', price: 79, stock: 10, aisle: 'J-01', level: 4, category: '建材與黏著', icon: '🖌️', keywords: '滾刷 油漆滾輪 塗牆', features: ['圓筒刷毛', '塗牆面', '短柄滾輪', '刷油漆', '附支架'] },
+      { name: '發泡填縫劑 750ml', brand: '工序選品', spec: '聚氨酯｜附噴管', price: 159, stock: 5, aisle: 'J-01', level: 1, category: '建材與黏著', icon: '🧴', keywords: '發泡劑 泡沫填縫 隔音填縫', features: ['噴出泡沫', '填縫隙', '門窗安裝', '隔音保溫', '罐裝噴劑'] },
+      { name: '木工白膠 500g', brand: '工序選品', spec: '水性｜木材黏著', price: 65, stock: 12, aisle: 'J-02', level: 2, category: '建材與黏著', icon: '🧴', keywords: '白膠 木頭膠 黏木材', features: ['白色乳膠', '黏木頭', '水性膠', '木工黏著', '瓶裝'] },
+      { name: '強力瞬間膠 3g', brand: '工序選品', spec: '透明｜單支', price: 29, stock: 26, aisle: 'J-02', level: 1, category: '建材與黏著', icon: '💧', keywords: '快乾膠 三秒膠 瞬間膠 黏合', features: ['小支裝', '透明膠水', '快速黏合', '修補小物', '瞬間乾'] },
+      { name: '紙膠帶 24mm', brand: '工序選品', spec: '油漆遮蔽用｜18m', price: 25, stock: 21, aisle: 'J-02', level: 3, category: '建材與黏著', icon: '🟨', keywords: '遮蔽膠帶 美紋紙 油漆膠帶', features: ['米黃色', '紙質膠帶', '油漆遮蔽', '可手撕', '暫時固定', '不易殘膠'] },
+      { name: '塑鋼土 100g', brand: '工序選品', spec: '雙劑型｜硬化修補', price: 89, stock: 7, aisle: 'J-02', level: 4, category: '建材與黏著', icon: '🧱', keywords: '補土 修補膠 金屬修補 epoxy', features: ['雙色膏體', '揉合後硬化', '修補金屬', '填補破洞', '黏土狀'] },
+      { name: '防水補漏膠 300ml', brand: '工序選品', spec: '灰色｜屋頂外牆用', price: 139, stock: 5, aisle: 'J-02', level: 5, category: '建材與黏著', icon: '🧴', keywords: '屋頂防水 漏水修補 密封膠', features: ['灰色膠材', '防水', '修補裂縫', '屋頂外牆', '耐候密封'] },
+      { name: '銅球閥 1/2吋', brand: '工序選品', spec: '內牙｜水管開關', price: 149, stock: 6, aisle: 'D-02', level: 5, category: '水電材料', icon: '🚰', keywords: '水閥 球閥 水管開關 黃銅閥', features: ['黃銅色金屬', '水管開關', '旋轉把手', '控制水流', '內牙接頭'] },
+      { name: '不鏽鋼水龍頭軟管 40cm', brand: '工序選品', spec: '編織外層｜附墊片', price: 89, stock: 14, aisle: 'D-02', level: 5, category: '水電材料', icon: '〰️', keywords: '水管軟管 編織管 浴室水龍頭', features: ['銀色編織', '可彎曲', '連接水龍頭', '兩端接頭', '不鏽鋼外皮'] },
+      { name: 'LED工作燈 10W', brand: '工序選品', spec: '可攜式｜附掛勾', price: 249, stock: 7, aisle: 'E-02', level: 4, category: '水電材料', icon: '🔦', keywords: '工作燈 手提燈 照明燈', features: ['明亮白光', '施工照明', '手提', '可吊掛', '電源線'] },
+      { name: '迷你斷路器 20A', brand: '國際牌', spec: '單極｜配電箱用', price: 129, stock: 5, aisle: 'E-02', level: 5, category: '水電材料', icon: '⚡', keywords: '無熔絲開關 breaker 漏電斷路器', features: ['配電箱', '電路保護', '跳電開關', '單極', '電工材料'] },
+      { name: 'PVC線槽 20×10mm', brand: '工序選品', spec: '白色｜1m', price: 35, stock: 20, aisle: 'E-01', level: 4, category: '水電材料', icon: '▱', keywords: '配線槽 電線槽 走線槽 藏線', features: ['白色長槽', '整理電線', '牆面走線', '塑膠槽', '可裁切', '附槽蓋'] }
+    ];
+    const extraCatalogRows = [
+      // 手工具：扳手、起子、鉗子、鎚子、鋸切、刀具、測量、打磨修飾
+      ['梅花扳手 10mm','手工具','B-02','🔧','單支｜鍍鉻鋼',89,'梅花 扳手 螺帽 螺栓 轉緊 金屬工具'],
+      ['開口扳手 12mm','手工具','B-02','🔧','單支｜雙頭開口',79,'開口 扳手 六角 螺帽 金屬工具'],
+      ['棘輪扳手 10mm','手工具','B-02','🔧','單支｜快速回轉',169,'棘輪 扳手 套筒 快速轉螺絲'],
+      ['扭力扳手 1/2吋','手工具','B-02','🔧','28–210Nm｜刻度可調',1290,'扭力 扳手 精準鎖緊 輪胎 汽車'],
+      ['管鉗 10吋','手工具','B-02','🗜️','水管扳手｜活動鉗口',249,'管鉗 水管扳手 轉水管 夾圓管 管路'],
+      ['一字起子 6×100mm','手工具','B-02','🪛','磁性刀頭｜防滑柄',65,'一字 槽型 起子 螺絲 手工具'],
+      ['星型起子 T25','手工具','B-02','🪛','梅花頭｜長軸',99,'星型 梅花 Torx 起子 螺絲'],
+      ['精密起子組 6件','手工具','B-02','🪛','十字一字｜附收納盒',129,'精密起子 小螺絲 眼鏡 手錶 維修'],
+      ['貫通起子 PH2','手工具','B-02','🪛','可敲擊尾端｜十字頭',119,'貫通起子 十字 敲擊 螺絲起子'],
+      ['斜口鉗 6吋','手工具','B-02','✂️','剪線用｜絕緣握柄',129,'斜口鉗 剪電線 剪鐵絲 鉗子'],
+      ['水泵鉗 10吋','手工具','B-02','🗜️','多段開口｜防滑柄',189,'水泵鉗 水管鉗 夾管 活動鉗口'],
+      ['萬能鎖緊鉗 10吋','手工具','B-02','🗜️','曲口｜可調鎖定',229,'萬能鉗 鎖緊鉗 固定 夾緊 鉗子'],
+      ['剝線鉗 7吋','手工具','B-02','✂️','電線剝皮｜多線徑',159,'剝線鉗 剝電線 去外皮 電工工具'],
+      ['壓著鉗 8吋','手工具','B-02','🗜️','端子壓接｜含剪線口',189,'壓著鉗 壓接 端子 電線鉗'],
+      ['卡簧鉗 內用直口','手工具','B-02','🗜️','7吋｜擋圈安裝',149,'卡簧鉗 擋圈鉗 彈性環 內用'],
+      ['羊角鎚 16oz','手工具','B-02','🔨','木柄｜拔釘槽',189,'羊角鎚 拔釘 敲釘 木柄 鐵鎚'],
+      ['鐵鎚 1磅','手工具','B-02','🔨','玻璃纖維柄',149,'鐵鎚 敲打 金屬鎚 頭重'],
+      ['球頭鎚 1磅','手工具','B-02','🔨','鋼製｜圓球尾',219,'球頭鎚 鐵造球頭 鍛打 敲金屬'],
+      ['橡膠鎚 16oz','手工具','B-02','🔨','黑色橡膠頭',99,'橡膠鎚 不傷表面 敲磁磚 木工'],
+      ['木鎚 12oz','手工具','B-02','🔨','硬木槌頭',129,'木鎚 木槌 敲鑿子 木工'],
+      ['銅鎚 500g','手工具','B-02','🔨','銅頭｜不易火花',490,'銅鎚 軟金屬 敲擊 防火花'],
+      ['無反彈鎚 32oz','手工具','B-02','🔨','填砂鎚頭｜減少回彈',399,'無反彈鎚 止回彈 塑料頭 敲裝配'],
+      ['手鋸 18吋','手工具','B-02','🪚','木工用｜粗齒',159,'手鋸 鋸木 木板 手動切割'],
+      ['鋼鋸架 12吋','手工具','B-02','🪚','附鋸條｜張力可調',139,'鋼鋸 鋸弓 鋸鐵管 鋸金屬'],
+      ['木工鋸 12吋','手工具','B-02','🪚','細齒｜直切用',189,'木工鋸 鋸木板 細齒 木料'],
+      ['折疊鋸 7吋','手工具','B-02','🪚','可收折｜修枝木材用',179,'折疊鋸 收納 修枝 鋸木 手鋸'],
+      ['管割刀 1/8–1吋','手工具','D-01','🔧','銅管切管器｜附切刀',269,'管割刀 切管器 切銅管 圓管'],
+      ['鋼絲剪 8吋','手工具','B-02','✂️','高碳鋼刀口',169,'鋼絲剪 剪鋼索 剪鐵絲 鉗剪'],
+      ['替換刀片 18mm','手工具','B-02','🔪','美工刀片｜10片裝',35,'刀片 美工刀替換 刀鋒 切紙箱'],
+      ['刮刀 2吋','手工具','C-02','🪒','不鏽鋼片｜木柄',59,'刮刀 刮除 油漆殘膠 填補膩子'],
+      ['鐵皮剪 10吋','手工具','B-02','✂️','直剪｜薄鐵板用',199,'鐵皮剪 剪薄金屬板 剪鐵片 剪刀'],
+      ['電工刀 折疊式','手工具','B-02','🔪','剝線刃｜附皮套',129,'電工刀 剝電線 割電纜 折疊刀'],
+      ['剪刀 8吋','手工具','B-02','✂️','不鏽鋼｜多用途',69,'剪刀 剪線 剪膠帶 剪薄片'],
+      ['鋼尺 30cm','手工具','B-01','📏','不鏽鋼｜公制刻度',45,'鋼尺 金屬直尺 量長度 畫直線'],
+      ['水平尺 12吋','手工具','B-01','📐','三水泡｜鋁合金',129,'水平尺 水平器 看水平 垂直 校正'],
+      ['直角尺 8吋','手工具','B-01','📐','不鏽鋼｜直角測量',89,'直角尺 木工角尺 90度 畫直角'],
+      ['雷射測距儀 40m','手工具','B-01','📏','單位切換｜背光螢幕',990,'雷射測距 儀器 量距離 室內測量'],
+      ['墨斗 15m','手工具','B-01','🧵','附藍色墨汁｜彈線定位',99,'墨斗 彈墨線 拉直線 木工放樣'],
+      ['劃線針 150mm','手工具','B-01','✏️','硬質合金尖頭',79,'劃線針 刻線 金屬標記 畫記號'],
+      ['油性記號筆 黑色','手工具','B-01','🖊️','粗頭｜永久墨水',25,'奇異筆 記號筆 黑色標記 寫字'],
+      ['平銼刀 8吋','手工具','B-02','🪚','中齒｜鋼材修整',99,'平挫 平銼 挫刀 磨平金屬'],
+      ['半圓銼刀 8吋','手工具','B-02','🪚','中齒｜曲面修整',119,'半圓挫 半圓銼 挫刀 磨弧面'],
+      ['圓銼刀 8吋','手工具','B-02','🪚','中齒｜圓孔修整',99,'圓挫 圓銼 挫刀 修圓孔'],
+      ['木工鑿子 12mm','手工具','B-02','🪓','木柄｜斬切木料',109,'木工鑿子 鑿木頭 木鑿 修木'],
+      ['中心衝 5mm','手工具','B-02','📍','自動彈簧式｜定位打點',69,'中心衝 打中心點 金屬定位 沖孔'],
+      ['石雕鑿 10mm','手工具','B-02','⛏️','平口｜水泥石材用',149,'石雕鑿 鑿石頭 水泥鑿 石材工具'],
+      // 電動、氣動工具與耗材
+      ['震動鎚鑽 26mm','電動工具','A-01','🔩','SDS四溝｜混凝土鑽孔',2190,'鎚鑽 水泥牆 混凝土 震動鑽 打洞'],
+      ['線鋸機 450W','電動工具','A-01','🪚','木材曲線切割｜含鋸片',1290,'線鋸 曲線鋸 木板切割 電動鋸'],
+      ['圓鋸機 7吋','電動工具','A-01','🪚','木材直線切割｜附鋸片',2490,'圓鋸 電動鋸 木板切割 木工'],
+      ['修邊機 1/4吋','電動工具','A-01','🛠️','木工倒角｜含直刀頭',1690,'修邊機 木工 倒角 修飾木板'],
+      ['熱風槍 1800W','電動工具','A-01','♨️','兩段溫度｜附風嘴',490,'熱風槍 加熱 烤漆除漆 熱縮管'],
+      ['電動打磨機 5吋','電動工具','A-01','⚙️','偏心式｜集塵袋',990,'打磨機 砂磨 木頭 研磨 拋光'],
+      ['氣動釘槍 F30','電動工具','A-02','🔫','木工直釘｜需接空壓機',1190,'氣動釘槍 F釘 木工打釘 空壓工具'],
+      ['空氣壓縮機 24L','電動工具','A-02','🛠️','靜音型｜含壓力錶',3980,'空壓機 空氣壓縮 打氣 氣動工具'],
+      ['水泥鑽頭 6mm','電動工具','A-02','🔩','SDS柄｜混凝土用',55,'水泥鑽頭 混凝土 磚牆 鑽孔'],
+      ['木工鑽頭 8mm','電動工具','A-02','🔩','尖頭定位｜木材用',39,'木工鑽頭 木頭 鑽洞 尖頭'],
+      ['金屬鑽頭 5mm','電動工具','A-02','🔩','高速鋼｜單支',29,'金屬鑽頭 鐵板 鋁材 鑽孔'],
+      ['開孔器 32mm','電動工具','A-02','⭕','雙金屬穴鑽｜木板塑膠',149,'開孔器 穴鑽 圓孔 開洞 木板'],
+      ['階梯鑽 4–20mm','電動工具','A-02','🔩','HSS｜薄鐵板擴孔',199,'階梯鑽 擴孔 鐵板 開孔 多尺寸'],
+      ['修邊刀頭 6mm','電動工具','A-02','🔩','直刀｜木工雕刻機用',129,'修邊刀頭 刀具 木工修邊 刻木'],
+      ['研磨砂輪片 4吋','電動工具','A-02','⭕','厚型｜金屬打磨',39,'研磨砂輪片 磨鐵 砂輪機 打磨'],
+      ['鑽石切割片 4吋','電動工具','A-02','⭕','磁磚石材｜薄型',159,'鑽石切割片 磁磚 石材 切割'],
+      ['鋼絲輪 4吋','電動工具','A-02','⭕','杯型｜除鏽清潔',99,'鋼絲輪 除鏽 刷鐵 砂輪機配件'],
+      ['百潔布輪 4吋','電動工具','A-02','⭕','不織布｜表面修飾',89,'百潔布輪 拋光 去毛刺 表面打磨'],
+      ['氣動風管捲管器 10m','電動工具','A-02','〰️','自動回捲｜含接頭',690,'風管捲管器 氣管 空壓機 氣動工具'],
+      ['氣動快速接頭 1/4吋','電動工具','A-02','🔗','母接頭｜金屬',49,'快速接頭 空壓 氣管 快速插拔'],
+      ['風槍吹塵槍','電動工具','A-02','💨','短嘴｜附接頭',129,'風槍 吹塵槍 吹灰 空壓清潔'],
+      // 螺絲、壁虎、釘子、螺帽、墊圈與連接配件
+      ['鐵板螺絲 4×12mm','螺絲與固定','C-01','🔩','十字頭｜鍍鋅50入',35,'鐵板螺絲 金屬薄板 自攻螺絲 固定'],
+      ['機器螺絲 M4×12mm','螺絲與固定','C-01','🔩','十字圓頭｜10入',29,'機器螺絲 公制牙 螺帽 金屬固定'],
+      ['鑽尾螺絲 5×25mm','螺絲與固定','C-01','🔩','六角華司頭｜20入',49,'鑽尾螺絲 鑽鐵板 不用預鑽 自攻'],
+      ['沉頭螺絲 M5×20mm','螺絲與固定','C-01','🔩','十字平頭｜10入',32,'沉頭螺絲 平頭 鎖平表面 機器螺絲'],
+      ['六角螺絲 M8×30mm','螺絲與固定','C-01','🔩','鍍鋅｜4支',39,'六角螺絲 螺栓 扳手 固定'],
+      ['金屬膨脹螺栓 3/8吋','螺絲與固定','C-01','🔩','大頭壁虎｜4支',89,'大頭壁虎 金屬膨脹螺絲 水泥牆 重物固定'],
+      ['中空壁虎 M5','螺絲與固定','C-01','🔩','石膏板用｜4入',69,'中空壁虎 石膏板 空心牆 膨脹固定'],
+      ['鋼釘 1吋','螺絲與固定','C-01','📍','圓頭｜100g',29,'鋼釘 鐵釘 敲入木頭 釘子'],
+      ['木釘 2吋','螺絲與固定','C-01','📍','平頭｜50支',25,'木釘 木工釘 固定木材 釘子'],
+      ['雙腳釘 1吋','螺絲與固定','C-01','📍','U型釘｜100支',35,'雙腳釘 U型釘 固定網線 木材'],
+      ['F型氣槍釘 F30','螺絲與固定','C-01','📍','直排釘｜1000支',79,'F釘 氣槍釘 木工釘 釘槍'],
+      ['ST型氣槍釘 ST38','螺絲與固定','C-01','📍','直排釘｜1000支',89,'ST釘 氣槍釘 裝潢釘 釘槍'],
+      ['J型氣槍釘 J422','螺絲與固定','C-01','📍','碼釘｜1000支',69,'J釘 碼釘 氣動釘槍 木工'],
+      ['止松螺帽 M8','螺絲與固定','C-01','⚙️','尼龍防鬆｜4入',29,'止松螺帽 防鬆螺帽 尼龍圈 固定'],
+      ['蝶形螺帽 M6','螺絲與固定','C-01','⚙️','手轉式｜4入',25,'蝶形螺帽 蝴蝶螺帽 手轉 螺絲配件'],
+      ['蓋形螺帽 M8','螺絲與固定','C-01','⚙️','圓頂｜4入',29,'蓋形螺帽 圓頭 保護螺牙 裝飾'],
+      ['彈簧墊圈 M8','螺絲與固定','C-01','⭕','鍍鋅｜10入',19,'彈簧墊圈 彈簧華司 防鬆 墊片'],
+      ['平型固定片 4孔','螺絲與固定','C-01','📐','鍍鋅｜2入',35,'平型固定片 連接木板 長條金屬片'],
+      ['洞洞鐵 1m','螺絲與固定','C-01','▤','鍍鋅打孔鐵條',69,'洞洞鐵 打孔鐵條 懸掛固定 可裁切'],
+      ['拉釘 4×10mm','螺絲與固定','C-01','🔩','鋁製｜20入',29,'拉釘 盲抽釘 抽芯鉚釘 金屬連接'],
+      ['手動拉釘槍','螺絲與固定','C-01','🛠️','四嘴型｜含扳手',299,'拉釘槍 鉚釘工具 抽芯釘 金屬板'],
+      ['金屬束帶 200mm','螺絲與固定','C-01','〰️','不鏽鋼｜10條',69,'金屬束帶 綁管 固定耐熱 不鏽鋼帶'],
+      // 水電、衛浴與照明材料
+      ['PVC電線管 1/2吋','水電材料','D-01','🧱','白色｜厚管4尺',39,'PVC電線管 穿電線 塑膠管 白色硬管'],
+      ['PVC排水管 1吋','水電材料','D-01','🧱','白色｜4尺',49,'PVC排水管 排水 塑膠水管 直管'],
+      ['PVC給水管 3/4吋','水電材料','D-01','🧱','厚管｜4尺',55,'PVC給水管 自來水 白色塑膠管'],
+      ['PVC三通 1/2吋','水電材料','D-01','↪️','厚管用｜90度分流',15,'三通接頭 水管分岔 PVC管件'],
+      ['PVC直通接頭 1/2吋','水電材料','D-01','🔗','厚管用｜直線連接',9,'直通接頭 PVC接頭 水管延長 管件'],
+      ['PVC異徑接頭 1×1/2吋','水電材料','D-01','🔗','大小管轉接',18,'異徑接頭 變徑 大小水管轉接 PVC'],
+      ['銅管壓接彎頭 1/2吋','水電材料','D-01','↪️','黃銅｜壓接式',89,'壓接銅管 銅管配件 黃銅接頭 水管'],
+      ['金屬軟管 30cm','水電材料','D-02','〰️','不鏽鋼編織｜附墊片',79,'金屬軟管 編織管 可彎曲 水龍頭接管'],
+      ['長腳水龍頭 4吋','水電材料','D-02','🚰','單冷｜不鏽鋼色',289,'長腳水龍頭 洗衣槽 水槽 冷水龍頭'],
+      ['混合水龍頭 冷熱','水電材料','D-02','🚰','面盆用｜附軟管',690,'混合水龍頭 冷熱水 洗手台 面盆龍頭'],
+      ['角閥 1/2×1/2吋','水電材料','D-02','🚰','三角凡爾｜鍍鉻',129,'角閥 三角凡爾 馬桶 水龍頭止水'],
+      ['蓮蓬頭 3段式','水電材料','D-02','🚿','增壓｜鍍鉻色',159,'蓮蓬頭 淋浴花灑 洗澡 出水'],
+      ['蓮蓬頭軟管 1.5m','水電材料','D-02','〰️','不鏽鋼｜兩端螺帽',119,'蓮蓬頭管 花灑軟管 淋浴 可彎曲'],
+      ['洗手台落水頭 1-1/4吋','水電材料','D-02','🚰','按壓式｜附止水圈',169,'落水頭 面盆排水 洗手台落水塞'],
+      ['水槽止水塞 40mm','水電材料','D-02','⭕','不鏽鋼｜附鏈條',59,'水槽塞 止水塞 洗碗槽 排水孔塞'],
+      ['洗手台S管 32mm','水電材料','D-02','〰️','塑膠｜防臭彎管',99,'S管 排水管 防臭 洗手台下方'],
+      ['水箱浮球閥','水電材料','D-02','🚽','側進水｜通用型',139,'浮球閥 馬桶水箱 水位控制 配件'],
+      ['水箱進水閥','水電材料','D-02','🚽','通用型｜附墊片',159,'進水閥 馬桶水箱 補水閥 衛浴零件'],
+      ['馬桶止水皮 2吋','水電材料','D-02','⭕','橡膠｜水箱排水用',49,'止水皮 馬桶水箱 橡膠塞 漏水修理'],
+      ['PVC水管膠水 100ml','水電材料','D-01','🧴','透明｜PVC管接著',65,'PVC膠水 水管黏著 接頭 塑膠管'],
+      ['水管防漏膠 300ml','水電材料','D-02','🧴','灰色｜管路修補',129,'水管防漏 漏水修補 防水膠 密封'],
+      ['通管條 3m','水電材料','D-02','〰️','手搖彈簧型｜排水管用',179,'通管條 通管器 水管堵塞 清除毛髮'],
+      ['單芯電線 1.6mm²','水電材料','E-01','〰️','紅色｜10m',89,'單芯線 電線 紅線 配電施工'],
+      ['絞線 2.0mm²','水電材料','E-01','〰️','白色｜10m',129,'絞線 多股電線 白線 導電配線'],
+      ['白扁電線 2.0mm²','水電材料','E-01','〰️','雙芯｜10m',159,'白扁線 電線 雙芯線 家用配線'],
+      ['插座面板 雙孔','水電材料','E-02','🔌','白色｜明裝外蓋',35,'插座面板 外蓋 白色牆壁插座'],
+      ['開關面板 單切','水電材料','E-02','🔘','白色｜單開',29,'開關面板 電燈開關外蓋 白色'],
+      ['暗盒 2聯','水電材料','E-02','▣','埋入式｜塑膠底盒',25,'暗盒 電器盒 埋牆 開關底盒'],
+      ['明盒 2聯','水電材料','E-02','▣','外露式｜白色',29,'明盒 牆面外露 插座底盒 電器盒'],
+      ['快速接線端子 3孔','水電材料','E-01','🔗','免螺絲｜5入',49,'快速接線 端子 接電線 免工具接線'],
+      ['壓著端子 圓型','水電材料','E-01','🔗','紅色絕緣｜10入',35,'壓著端子 電線端子 圓形接線 電工'],
+      ['LED燈管 4尺 18W','水電材料','E-02','💡','白光｜T8',129,'LED燈管 日光燈管 長燈管 照明'],
+      ['感應燈 LED','水電材料','E-02','💡','人體感應｜電池式',199,'感應燈 人體感應 自動亮燈 走廊燈'],
+      ['防滴插座蓋','水電材料','E-02','🔌','透明掀蓋｜戶外用',79,'防滴插座蓋 防雨 防水 電源保護'],
+      // 油漆、化學品與黏著用品
+      ['水性水泥漆 白色 1L','油漆與耗材','C-02','🪣','室內牆面｜低氣味',189,'水泥漆 白色 水性漆 刷牆 牆面塗料'],
+      ['乳膠漆 淺灰 1L','油漆與耗材','C-02','🪣','室內用｜霧面',229,'乳膠漆 淺灰 油漆 牆面 水性塗料'],
+      ['油性漆 黑色 0.7L','油漆與耗材','C-02','🪣','金屬木材用｜亮面',199,'油性漆 黑漆 塗金屬 木頭 油漆'],
+      ['自動噴漆 白色 400ml','油漆與耗材','C-02','🎨','快乾｜噴罐',89,'噴漆 白色 噴罐 噴塗 快乾'],
+      ['自動噴漆 紅色 400ml','油漆與耗材','C-02','🎨','快乾｜噴罐',89,'噴漆 紅色 噴罐 噴塗 快乾'],
+      ['自動噴漆 黑色 400ml','油漆與耗材','C-02','🎨','快乾｜噴罐',89,'噴漆 黑色 噴罐 噴塗 快乾'],
+      ['防鏽漆 鐵灰 0.7L','油漆與耗材','C-02','🪣','金屬底漆｜防鏽',189,'防鏽漆 鐵灰 金屬底漆 防鏽油漆'],
+      ['壁癌防治噴劑 500ml','油漆與耗材','C-02','🧴','牆面處理｜噴霧式',169,'壁癌 除霉噴劑 牆壁潮濕 防治噴劑'],
+      ['防水塗料 1kg','建材與黏著','J-02','🪣','灰色｜屋頂外牆',249,'防水塗料 防水漆 屋頂 外牆 防漏'],
+      ['酸性矽利康 白色','油漆與耗材','C-02','🧴','300ml｜玻璃用',89,'酸性矽利康 玻璃膠 填縫 防水膠'],
+      ['水性填縫劑 白色','油漆與耗材','C-02','🧴','磁磚縫｜300ml',69,'填縫劑 磁磚縫 水性填縫 白色'],
+      ['熱熔膠槍 20W','油漆與耗材','J-02','🔫','迷你型｜附2條膠條',129,'熱熔膠槍 黏著 加熱膠槍 手作'],
+      ['熱熔膠條 7mm','油漆與耗材','J-02','🧪','透明｜10條',39,'熱熔膠條 膠棒 熱熔膠槍耗材 黏東西'],
+      ['AB膠 5分鐘型','油漆與耗材','J-02','🧪','雙管｜各15ml',79,'AB膠 環氧樹脂 雙劑 金屬黏著'],
+      ['強力膠 20ml','油漆與耗材','J-02','🧴','鞋材皮革用',59,'強力膠 黏鞋 黏皮革 黏著劑'],
+      ['免釘膠 300ml','油漆與耗材','J-02','🧴','室內用｜高黏著',129,'免釘膠 不用鑽孔 黏牆 掛物'],
+      ['雙面泡棉膠帶 24mm','油漆與耗材','J-02','🩹','白色｜2m',39,'雙面膠 泡棉膠帶 黏貼 固定物品'],
+      ['強力膠帶 48mm','油漆與耗材','J-02','🩹','黑色布紋｜10m',79,'超強膠帶 布紋膠帶 修補 防水黏貼'],
+      ['警示膠帶 黃黑','油漆與耗材','J-02','🟨','48mm｜標示危險區',69,'警示膠帶 黃黑 斑馬紋 標示地面'],
+      ['除鏽潤滑劑 300ml','油漆與耗材','J-02','🧴','噴霧罐｜防鏽潤滑',129,'WD-40 除鏽 潤滑 噴罐 鬆動螺絲'],
+      ['松香水 500ml','油漆與耗材','J-02','🧴','油漆稀釋清潔用',99,'松香水 稀釋油漆 清洗刷具 溶劑'],
+      ['去漬油 500ml','油漆與耗材','J-02','🧴','清潔用｜罐裝',89,'去漬油 去油污 清潔 溶劑'],
+      ['香蕉水 500ml','油漆與耗材','J-02','🧴','油漆稀釋用',109,'香蕉水 稀釋劑 溶劑 油漆清潔'],
+      ['丙酮 250ml','油漆與耗材','J-02','🧴','清潔溶劑｜瓶裝',99,'丙酮 溶劑 去膠 清潔'],
+      ['工業酒精 500ml','油漆與耗材','J-02','🧴','清潔用｜瓶裝',89,'工業酒精 酒精 擦拭 清潔溶劑'],
+      ['除膠劑 200ml','油漆與耗材','J-02','🧴','噴霧式｜殘膠清除',119,'除膠劑 清除殘膠 去貼紙 膠痕'],
+      // 門窗、鎖具與家具五金
+      ['水平門鎖 60mm','門窗五金','G-01','🚪','左右通用｜附鎖舌',329,'水平鎖 門鎖 房門鎖 門把 更換'],
+      ['三段式門鎖','門窗五金','G-01','🔒','附鎖心與鑰匙',690,'三段鎖 四段鎖 大門鎖 安全門鎖'],
+      ['密碼掛鎖 40mm','門窗五金','G-01','🔒','三位數密碼｜免鑰匙',159,'密碼鎖 掛鎖 置物櫃 鐵門'],
+      ['腳踏車鋼纜鎖','門窗五金','G-01','🔒','1m｜附鑰匙2支',129,'腳踏車鎖 自行車鎖 鋼索 防盜'],
+      ['機車大鎖 U型','門窗五金','G-01','🔒','加粗鎖梁｜附鑰匙',299,'機車大鎖 U型鎖 防盜 重機車'],
+      ['隱形鉸鏈 35mm','門窗五金','G-02','⚙️','櫥櫃門用｜緩衝型',99,'隱形鉸鏈 西德鉸鏈 櫥櫃門 暗鉸鏈'],
+      ['磁吸門擋','門窗五金','G-01','🧲','地板固定｜銀色',89,'磁吸門檔 門吸 防撞 固定門片'],
+      ['門栓插銷 4吋','門窗五金','G-01','🔒','不鏽鋼｜附螺絲',69,'門栓 插銷 門閂 門片固定'],
+      ['門弓器 65kg','門窗五金','G-01','🚪','自動閉門｜可調速',590,'門弓器 自動關門 閉門器 大門'],
+      ['門縫氣密條 5m','門窗五金','G-02','〰️','灰色泡棉｜背膠',79,'門縫條 氣密條 防風 隔音 防塵'],
+      ['櫥櫃緩衝鉸鏈 35mm','門窗五金','G-02','⚙️','半蓋式｜緩衝關門',89,'西德鉸鏈 緩衝鉸鏈 櫥櫃門 關門'],
+      ['磁吸拍門 2入','門窗五金','G-02','🧲','櫃門磁吸｜附底座',49,'拍打門吸 磁吸 櫃門吸 門扣'],
+      ['桌腳防刮墊 20mm','門窗五金','G-02','⭕','黑色橡膠｜8入',35,'桌腳墊 防刮墊 椅腳墊 靜音'],
+      ['重型萬向輪 3吋','門窗五金','G-02','⚙️','煞車型｜承重80kg',159,'重型腳輪 萬向輪 煞車輪 推車輪子'],
+      // 建築土木、梯具、繩索與覆蓋保護
+      ['伸縮鋁梯 3.8m','建材與黏著','F-02','🪜','多段伸縮｜附安全扣',1890,'伸縮梯 鋁梯 登高 折疊梯 爬高'],
+      ['多功能折疊梯 4尺','建材與黏著','F-02','🪜','A字梯｜雙側踏板',990,'A字梯 折疊梯 鋁梯 登高工作'],
+      ['平板手推車','建材與黏著','F-02','🛒','折疊把手｜載重150kg',1290,'手推車 平板車 搬重物 板車'],
+      ['兩輪手推車','建材與黏著','F-02','🛒','爬樓輪｜載重100kg',990,'兩輪板車 搬運 推貨車 搬箱子'],
+      ['油壓拖板車 2噸','建材與黏著','F-02','🛒','低床型｜倉儲搬運',6800,'油壓搬運車 拖板車 棧板 搬貨'],
+      ['麻繩 8mm 10m','建材與黏著','I-02','🪢','天然纖維｜米色',69,'麻繩 粗繩 綁東西 天然纖維'],
+      ['鋼索 3mm 5m','建材與黏著','H-02','〰️','包膠｜含兩端套環',99,'鋼索 鋼纜 拉重物 金屬繩'],
+      ['鋼索卡扣 3mm','建材與黏著','H-02','🔗','不鏽鋼｜2入',35,'鋼索扣 鋼索固定 金屬夾 線夾'],
+      ['鍍鋅鏈條 3mm 1m','建材與黏著','H-02','⛓️','短節距｜可裁切',89,'鏈條 金屬鏈 吊掛 固定'],
+      ['棘輪拉緊帶 4m','建材與黏著','H-02','〰️','附金屬鉤｜綁貨用',189,'棘輪綁帶 拉緊帶 固定貨物 綁車'],
+      ['吊帶 1噸 2m','建材與黏著','H-02','〰️','扁平聚酯｜雙環',169,'吊帶 搬重物 吊掛 綁帶'],
+      ['登山扣 8mm','建材與黏著','H-02','🔗','鋁合金｜旋轉鎖',39,'登山扣 安全扣 掛繩 鋁扣'],
+      ['齒形抹刀 6吋','建材與黏著','J-01','🪚','不鏽鋼｜貼磚施工',119,'齒抹 齒形抹刀 磁磚黏著 水泥施工'],
+      ['水泥平抹刀 8吋','建材與黏著','J-01','🛠️','不鏽鋼｜木柄',99,'平抹刀 水泥抹刀 抹平砂漿 土木工具'],
+      ['灰匙 6吋','建材與黏著','J-01','🛠️','尖頭｜砌磚用',69,'灰匙 砌磚 水泥砂漿 建築工具'],
+      ['水泥砂漿 5kg','建材與黏著','J-01','🧱','修補用｜加水攪拌',89,'砂漿 水泥粉 修補牆面 灰色建材'],
+      ['水篩網 8吋','建材與黏著','J-01','🕸️','細目｜過篩砂土',69,'水篩網 篩砂子 過濾土壤 金屬網'],
+      ['鋼絲刷 木柄','建材與黏著','J-01','🧹','手刷｜除鏽清潔',49,'鋼絲刷 刷鐵 除鏽 清理水泥'],
+      ['藍白帆布 3×4尺','建材與黏著','J-01','🟦','防水編織｜附孔眼',129,'帆布 防雨 遮蓋 防塵 藍白布'],
+      ['防塵保護膜 4尺×20m','建材與黏著','J-01','🧻','透明薄膜｜裝潢養生',99,'保護膜 防塵膜 遮家具 裝潢保護'],
+      ['養生膠帶 48mm','建材與黏著','J-01','🟨','低黏性｜地面保護',45,'養生膠帶 保護地板 裝潢遮蔽 紙膠帶'],
+      // 勞安防護與個人裝備
+      ['棉紗手套 12雙','安全防護','F-01','🧤','白色｜一般搬運',99,'棉紗手套 白手套 搬運 工作防護'],
+      ['防割手套 M號','安全防護','F-01','🧤','耐切割纖維｜一雙',189,'防割手套 切割防護 手部安全'],
+      ['電焊手套 14吋','安全防護','F-01','🧤','牛皮｜耐熱長袖',249,'電焊手套 焊接 耐熱 皮手套'],
+      ['耐酸鹼手套 L號','安全防護','F-01','🧤','加長橡膠｜一雙',99,'耐酸鹼手套 化學防護 橡膠手套'],
+      ['一次性乳膠手套 M號','安全防護','F-01','🧤','無粉｜10入',59,'乳膠手套 一次性 橡膠手套 清潔'],
+      ['活性碳口罩 3入','安全防護','F-01','😷','防異味｜耳掛式',69,'活性碳口罩 防異味 防塵 呼吸防護'],
+      ['防毒面具半面罩','安全防護','F-01','😷','雙濾罐接口｜面罩本體',590,'防毒面具 半面罩 化學氣味 呼吸防護'],
+      ['工程安全帽 黃色','安全防護','F-01','⛑️','可調頭圍｜附帽帶',169,'安全帽 工地頭部防護 黃色帽子'],
+      ['耳罩式防噪耳機','安全防護','F-01','🎧','可調頭帶｜降噪',199,'耳罩 隔音耳罩 防噪音 聽力防護'],
+      ['反光背心 黃色','安全防護','F-01','🦺','網布｜均碼',129,'反光背心 夜間可見 工地安全服'],
+      ['護膝墊 一雙','安全防護','F-01','🦵','泡棉｜可調束帶',149,'護膝 跪地工作 膝蓋保護 泡棉墊'],
+      ['鋼頭安全鞋 26cm','安全防護','F-01','🥾','防滑底｜黑色',990,'鋼頭鞋 安全鞋 防砸 工作鞋'],
+      ['防水雨鞋 26cm','安全防護','F-01','🥾','高筒｜黑色',299,'雨鞋 防水靴 高筒鞋 雨天'],
+      ['輕便雨衣 黃色','安全防護','F-01','🌧️','兩截式｜均碼',199,'雨衣 防雨 黃色雨衣 戶外工作']
+    ];
+    const extendedInventory = extraCatalogRows.map((row, index) => {
+      const [name, category, aisle, icon, spec, price, keywords] = row;
+      const featureTerms = [...new Set([name, ...keywords.split(/\s+/).filter(Boolean)])];
+      return { name, brand: '工序選品', spec, price, stock: index % 19 === 0 ? 0 : 3 + ((index * 7) % 31), aisle, level: (index % 5) + 1, category, icon, keywords, features: featureTerms };
+    });
+    demoInventory.push(...extendedInventory);
+    let inventory = [];
+    function prepareInventory(items) {
+      items.forEach((item) => { item.floor = shelfById(item.aisle)?.floor || ''; });
+      return items;
+    }
+    const demoShelves = [
+      ['1F','A-01','電鑽與起子機'],['1F','A-02','鑽頭與配件'],['1F','B-01','量測工具'],['1F','B-02','手工具'],['1F','C-01','螺絲與壁虎'],['1F','C-02','膠材與修補'],
+      ['1F','D-01','水管與接頭'],['1F','D-02','水龍頭零件'],['1F','E-01','電線與膠帶'],['1F','E-02','插座與延長線'],['1F','F-01','安全防護'],['1F','F-02','梯具與收納'],
+      ['2F','G-01','門鎖與合頁'],['2F','G-02','窗件與家具五金'],['2F','H-01','園藝手工具'],['2F','H-02','水管與戶外用品'],['2F','I-01','清潔用品'],['2F','I-02','收納用品'],
+      ['2F','J-01','建材與施工用品'],['2F','J-02','黏著與密封用品']
+    ].map(([floor, id, name]) => ({ floor, id, name, levels: 5 }));
+    let shelves = [];
+    const shelfById = (id) => shelves.find((shelf) => shelf.id === id);
+    function applySettings(settings) {
+      const name = (settings && settings.storeName) || '工序五金';
+      document.querySelectorAll('.store-name-text').forEach((node) => { node.textContent = name; });
+      document.getElementById('storeTagline').textContent = (settings && settings.tagline) || '店內商品快找';
+      document.title = name + '｜店內商品快找';
+    }
+    function renderMap() {
+      const floors = [...new Set(shelves.map((shelf) => shelf.floor))];
+      if (!floors.includes(currentFloor)) currentFloor = floors[0] || '';
+      document.getElementById('floorTabs').innerHTML = floors.map((floor) => {
+        const count = shelves.filter((shelf) => shelf.floor === floor).length;
+        return `<button class="floor-tab" type="button" data-floor="${escapeHtml(floor)}" aria-pressed="false"><strong>${escapeHtml(floor)}</strong><small>${count} 個貨架</small></button>`;
+      }).join('');
+      document.getElementById('aisles').innerHTML = shelves.map((shelf) => `<button class="aisle" type="button" data-floor="${escapeHtml(shelf.floor)}" data-aisle="${escapeHtml(shelf.id)}" aria-label="${escapeHtml(shelf.floor + ' ' + shelf.id + ' 貨架 ' + shelf.name)}"><strong>${escapeHtml(shelf.id)}</strong><small>${escapeHtml(shelf.name)}</small></button>`).join('');
+      selectFloor(currentFloor, false);
+    }
+    // 兩個斜線連在一起的字串在 Apps Script 頁面中會出錯，所以用字元碼組成
+    const DOUBLE_SLASH = String.fromCharCode(47, 47);
+    let category = '全部';
+    let query = '';
+    let currentFloor = '';
+    let visibleCount = 24;
+    const pageSize = 24;
+    const productsNode = document.getElementById('products');
+    const summaryNode = document.getElementById('resultSummary');
+    const emptyNode = document.getElementById('empty');
+    const stockOnly = document.getElementById('inStockOnly');
+    const searchInput = document.getElementById('searchInput');
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+    function setInventory(items) {
+      inventory = prepareInventory(items);
+      document.getElementById('allCount').textContent = inventory.length;
+      render();
+    }
+    function setStoreData(data) {
+      shelves = data.shelves || [];
+      applySettings(data.settings);
+      renderMap();
+      setInventory(data.products || []);
+    }
+    function loadInventory() {
+      if (typeof google === 'undefined' || !google.script || !google.script.run) {
+        shelves = demoShelves;
+        applySettings(null);
+        renderMap();
+        setInventory(demoInventory);
+        return;
+      }
+      summaryNode.textContent = '商品資料載入中…';
+      google.script.run
+        .withSuccessHandler((data) => setStoreData(data))
+        .withFailureHandler((error) => {
+          summaryNode.textContent = '商品資料載入失敗';
+          showToast('讀取商品資料失敗：' + (error && error.message ? error.message : error));
+        })
+        .getStoreData();
+    }
+    function render() {
+      const normalized = query.trim().toLocaleLowerCase();
+      let matches = inventory.map((item) => {
+        const categoryMatch = category === '全部' || item.category === category;
+        const norm = (value) => String(value).toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+        const words = norm(`${item.name} ${item.brand} ${item.spec} ${item.category} ${item.keywords}`);
+        const matchingFeatures = item.features.filter((feature) => normalized.includes(norm(feature)) || (norm(feature).length >= 2 && norm(feature).includes(normalized)));
+        const exactMatch = normalized && words.includes(norm(normalized));
+        const score = exactMatch ? 20 : matchingFeatures.length * 3;
+        return { ...item, matchingFeatures, score, categoryMatch };
+      }).filter((item) => item.categoryMatch && (!normalized || item.score > 0) && (!stockOnly.checked || item.stock > 0));
+      const sort = document.getElementById('sortSelect').value;
+      if (sort === 'recommended' && normalized) matches.sort((a,b) => b.score-a.score);
+      if (sort === 'price-asc') matches.sort((a,b) => a.price-b.price);
+      if (sort === 'price-desc') matches.sort((a,b) => b.price-a.price);
+      if (sort === 'name') matches.sort((a,b) => a.name.localeCompare(b.name, 'zh-Hant'));
+      const visibleItems = matches.slice(0, visibleCount);
+      summaryNode.innerHTML = `顯示 <b>${visibleItems.length}</b> / ${matches.length} 項商品${query ? `，關鍵字「${escapeHtml(query)}」` : ''}`;
+      productsNode.innerHTML = visibleItems.map((item) => `
+        <article class="product">
+          ${imageUrl(item) ? `<div class="product-photo"><img src="${imageUrl(item)}" alt="${escapeHtml(item.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></div>` : ''}
+          <div class="product-top"><div class="product-icon" aria-hidden="true">${item.icon}</div><span class="stock-badge ${item.stock ? 'in' : 'out'}">${item.stock ? `現貨 ${item.stock} 件` : '暫無現貨'}</span></div>
+          <h3>${escapeHtml(item.name)}</h3><div class="spec">${escapeHtml(item.brand)}　·　${escapeHtml(item.spec)}</div>
+          ${normalized && item.matchingFeatures.length ? `<div class="match-tags"><span>符合特徵</span>${item.matchingFeatures.slice(0, 3).map((feature) => `<i>${escapeHtml(feature)}</i>`).join('')}</div>` : ''}
+          <div class="product-bottom"><div><div class="price">NT$ ${item.price.toLocaleString()} <small>/ 件</small></div><div class="location">📍 ${item.floor} ${item.aisle}・第 ${item.level} 層</div></div><button class="loc-btn" type="button" data-aisle="${item.aisle}" data-name="${escapeHtml(item.name)}">看貨架位置</button></div>
+        </article>`).join('');
+      emptyNode.style.display = matches.length ? 'none' : 'block';
+      productsNode.style.display = matches.length ? 'grid' : 'none';
+      const loadMore = document.getElementById('loadMore');
+      loadMore.style.display = visibleCount < matches.length ? 'block' : 'none';
+      loadMore.textContent = `載入更多商品（還有 ${matches.length - visibleItems.length} 項）`;
+      productsNode.querySelectorAll('.loc-btn').forEach((button) => button.addEventListener('click', () => showLocation(button.dataset.aisle, button.dataset.name)));
+    }
+    function imageUrl(item) {
+      const value = String(item.image || '').trim();
+      if (!value) return '';
+      if (value.startsWith('https:')) {
+        return value.includes('"') || value.includes("'") || value.includes('<') || value.includes('>') || value.includes(' ') ? '' : escapeHtml(value);
+      }
+      if (value.length < 20 || value.includes('/') || value.includes(' ')) return '';
+      return 'https:' + DOUBLE_SLASH + 'drive.google.com/thumbnail?id=' + encodeURIComponent(value) + '&amp;sz=w600';
+    }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char])); }
+    function selectFloor(floor, resetShelf = true) {
+      currentFloor = floor;
+      document.querySelectorAll('.floor-tab').forEach((button) => {
+        const active = button.dataset.floor === floor;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      document.querySelectorAll('.aisle').forEach((button) => {
+        button.classList.toggle('floor-hidden', button.dataset.floor !== floor);
+        if (resetShelf) button.classList.remove('highlight');
+      });
+      if (resetShelf) {
+        document.getElementById('shelfDetails').classList.remove('visible');
+        document.getElementById('mapHint').textContent = `${floor}｜點選貨架分區，查看各層商品`;
+      }
+    }
+    function showShelf(aisle, targetName = '') {
+      const shelf = shelfById(aisle);
+      const total = shelf ? shelf.levels : 5;
+      const levels = Array.from({ length: total }, (_, i) => total - i);
+      const targetItem = inventory.find((item) => item.aisle === aisle && item.name === targetName);
+      const shelfItems = inventory.filter((item) => item.aisle === aisle);
+      const floor = shelf ? shelf.floor : currentFloor;
+      selectFloor(floor, false);
+      document.querySelectorAll('.aisle').forEach((node) => node.classList.toggle('highlight', node.dataset.aisle === aisle));
+      document.getElementById('shelfName').textContent = `${floor} ${aisle} 貨架分層`;
+      document.getElementById('mapHint').textContent = targetItem ? `${targetItem.name}｜${floor} ${aisle} 第 ${targetItem.level} 層` : `${floor} ${aisle} 貨架｜共 ${shelfItems.length} 項商品`;
+      const layerCount = document.getElementById('shelfLayerCount');
+      layerCount.classList.toggle('target', Boolean(targetItem));
+      layerCount.textContent = targetItem ? `📍 商品在第 ${targetItem.level} 層` : `共 ${total} 層`;
+      document.getElementById('shelfLevels').innerHTML = levels.map((level) => {
+        const items = shelfItems.filter((item) => item.level === level);
+        const selected = targetItem && targetItem.level === level;
+        const contents = items.length ? items.map((item) => `${escapeHtml(item.name)}<small>${item.stock ? `現貨 ${item.stock} 件` : '暫無現貨'}</small>`).join('<br>') : '<span class="empty-level">此層目前沒有商品</span>';
+        return `<div class="shelf-level ${selected ? 'selected' : ''}"${selected ? ' aria-current="location"' : ''}><div class="level-label"><span>第 ${level} 層${level === total && total > 1 ? '・上層' : level === 1 && total > 1 ? '・下層' : ''}</span>${selected ? '<b class="target-level-mark">商品在此層</b>' : ''}</div><div class="level-items">${contents}</div></div>`;
+      }).join('');
+      document.getElementById('shelfDetails').classList.add('visible');
+      document.getElementById('storeMap').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function showLocation(aisle, name) { showShelf(aisle, name); }
+    document.getElementById('floorTabs').addEventListener('click', (event) => {
+      const button = event.target.closest('.floor-tab');
+      if (button) selectFloor(button.dataset.floor);
+    });
+    document.getElementById('aisles').addEventListener('click', (event) => {
+      const button = event.target.closest('.aisle');
+      if (button) showShelf(button.dataset.aisle);
+    });
+    document.getElementById('searchForm').addEventListener('submit', (event) => { event.preventDefault(); query = searchInput.value; visibleCount = pageSize; render(); document.querySelector('.main-head').scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+    searchInput.addEventListener('input', () => { if (!searchInput.value) { query = ''; visibleCount = pageSize; render(); } });
+    document.querySelectorAll('.quick').forEach((button) => button.addEventListener('click', () => { searchInput.value = button.dataset.query; query = button.dataset.query; visibleCount = pageSize; render(); document.querySelector('.main-head').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
+    document.getElementById('categoryList').addEventListener('click', (event) => {
+      const button = event.target.closest('.cat'); if (!button) return;
+      document.querySelectorAll('.cat').forEach((node) => node.classList.toggle('active', node === button));
+      category = button.dataset.category; visibleCount = pageSize; render();
+    });
+    stockOnly.addEventListener('change', () => { visibleCount = pageSize; render(); });
+    document.getElementById('sortSelect').addEventListener('change', () => { visibleCount = pageSize; render(); });
+    document.getElementById('loadMore').addEventListener('click', () => { visibleCount += pageSize; render(); });
+    document.getElementById('clearFilters').addEventListener('click', () => {
+      category = '全部'; query = ''; searchInput.value = ''; stockOnly.checked = false; visibleCount = pageSize;
+      document.getElementById('sortSelect').value = 'recommended';
+      document.querySelectorAll('.cat').forEach((node) => node.classList.toggle('active', node.dataset.category === '全部'));
+      document.querySelectorAll('.aisle').forEach((node) => node.classList.remove('highlight'));
+      selectFloor(shelves.length ? shelves[0].floor : '');
+      render();
+    });
+    const photoDialog = document.getElementById('photoDialog');
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    const uploadCopy = document.getElementById('uploadCopy');
+    const photoDescription = document.getElementById('photoDescription');
+    const photoFeedback = document.getElementById('photoFeedback');
+    const photoSearch = document.getElementById('photoSearch');
+    const photoDemoResults = document.getElementById('photoDemoResults');
+    document.getElementById('openPhoto').addEventListener('click', () => photoDialog.showModal());
+    document.getElementById('closePhoto').addEventListener('click', () => photoDialog.close());
+    photoDialog.addEventListener('click', (event) => { if (event.target === photoDialog) photoDialog.close(); });
+    photoInput.addEventListener('change', () => {
+      const file = photoInput.files && photoInput.files[0];
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        photoFeedback.textContent = '請選擇圖片檔案。';
+        photoInput.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        photoPreview.src = reader.result;
+        photoPreview.style.display = 'block';
+        uploadCopy.style.display = 'none';
+        photoFeedback.textContent = photoDescription.value.trim() ? '照片已選好；可直接搜尋，也可用補充的文字線索縮小結果。' : '照片已選好；不必輸入文字，直接按「依照片搜尋商品」即可。';
+        photoSearch.disabled = false;
+        photoDemoResults.hidden = true;
+      };
+      reader.readAsDataURL(file);
+    });
+    photoSearch.addEventListener('click', () => {
+      const description = photoDescription.value.trim();
+      if (!photoInput.files || !photoInput.files[0]) return;
+      searchByPhoto(description);
+    });
+
+    // MobileNet 在瀏覽器端辨識，不需要 API 金鑰；英文標籤對應到店內常用中文詞
+    const LABEL_TERMS = {
+      'hammer': '鐵鎚 羊角鎚 鎚', 'hatchet': '斧 鎚', 'screwdriver': '起子 螺絲起子', 'power drill': '電鑽 鑽頭 起子機',
+      'wrench': '扳手 板手', 'plunger': '通管 水管', 'padlock': '掛鎖 鎖頭', 'combination lock': '密碼鎖 掛鎖', 'lock': '鎖 鎖頭',
+      'chain saw': '鋸 圓鋸', 'plane': '木工 鋸 刨', 'nail': '釘 鋼釘', 'screw': '螺絲', 'rule': '捲尺 尺 鋼尺',
+      'bucket': '水桶', 'broom': '掃把', 'wheelbarrow': '手推車', 'hook': '掛勾 S型', 'cleaver': '美工刀 刀',
+      'letter opener': '美工刀 刀', 'shovel': '鏟', 'spatula': '刮刀 抹刀', 'flashlight': '工作燈 燈', 'torch': '工作燈 燈',
+      'electric switch': '開關', 'switch': '開關', 'paintbrush': '油漆刷 刷', 'brush': '刷子 刷', 'crate': '收納箱 工具箱',
+      'chest': '收納箱 工具箱', 'gas mask': '防毒面具 口罩', 'mask': '口罩', 'hard hat': '安全帽', 'crash helmet': '安全帽',
+      'sunglass': '護目鏡', 'goggles': '護目鏡', 'oven mitt': '手套', 'glove': '手套', 'rubber boot': '雨鞋', 'boot': '安全鞋 雨鞋',
+      'chain': '鏈條 鐵鏈', 'rope': '繩', 'band aid': '膠帶', 'tape': '膠帶', 'ladder': '梯', 'pipe': '水管 PVC',
+      'faucet': '水龍頭', 'tap': '水龍頭', 'bulb': '燈泡 LED', 'lamp': '燈', 'extension': '延長線', 'plug': '插座 插頭',
+      'bolt': '螺絲 螺栓', 'nut': '螺帽', 'knife': '刀', 'scissors': '剪刀', 'pliers': '鉗', 'saw': '鋸', 'axe': '斧'
+    };
+    let modelPromise = null;
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src; script.onload = resolve; script.onerror = () => reject(new Error('無法載入辨識元件'));
+        document.head.appendChild(script);
+      });
+    }
+    function loadModel() {
+      if (!modelPromise) {
+        modelPromise = (async () => {
+          await loadScript('https:' + DOUBLE_SLASH + 'cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js');
+          await loadScript('https:' + DOUBLE_SLASH + 'cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js');
+          return mobilenet.load({ version: 2, alpha: 1.0 });
+        })().catch((error) => { modelPromise = null; throw error; });
+      }
+      return modelPromise;
+    }
+    function termsFromPredictions(predictions) {
+      const terms = [];
+      predictions.forEach((prediction) => {
+        const label = prediction.className.toLowerCase();
+        Object.keys(LABEL_TERMS).forEach((key) => {
+          if (prediction.probability >= 0.03 && label.includes(key)) terms.push(...LABEL_TERMS[key].split(/\s+/));
+        });
+      });
+      return [...new Set(terms)];
+    }
+    function rankByTerms(terms) {
+      const norm = (value) => String(value).toLocaleLowerCase().replace(/[\s\p{P}\p{S}]+/gu, '');
+      return inventory.map((item) => {
+        const haystack = norm(`${item.name} ${item.brand} ${item.spec} ${item.category} ${item.keywords} ${item.features.join(' ')}`);
+        const hits = terms.filter((term) => haystack.includes(norm(term)));
+        const inName = terms.filter((term) => norm(item.name).includes(norm(term))).length;
+        return { item, score: hits.length + inName * 2 };
+      }).filter((entry) => entry.score > 0).sort((a, b) => b.score - a.score || b.item.stock - a.item.stock).slice(0, 8).map((entry) => entry.item);
+    }
+    async function searchByPhoto(description) {
+      photoSearch.disabled = true;
+      photoDemoResults.hidden = true;
+      try {
+        photoFeedback.textContent = '正在辨識照片…第一次使用需要下載辨識元件，請稍候。';
+        const model = await loadModel();
+        const predictions = await model.classify(photoPreview, 5);
+        const terms = [...termsFromPredictions(predictions), ...description.split(/[\s,，、]+/).filter(Boolean)];
+        const guesses = predictions.slice(0, 3).map((p) => `${p.className.split(',')[0]} ${(p.probability * 100).toFixed(0)}%`).join('、');
+        const matches = terms.length ? rankByTerms(terms) : [];
+        const heading = matches.length ? '可能相似的商品' : '沒有找到明確符合的商品';
+        const note = matches.length
+          ? '照片辨識只能判斷大致類別，結果僅供參考，請再核對規格。'
+          : '照片辨識未能對應到店內商品，請在上方「補充特徵」輸入名稱或用途再試一次。';
+        photoDemoResults.innerHTML = `<h3>${heading}</h3><p>${note}<br>辨識線索：${escapeHtml(guesses)}</p>${matches.map((item) => `<div class="photo-candidate"><span>${escapeHtml(item.icon)} ${escapeHtml(item.name)}｜${item.floor} ${item.aisle}・第 ${item.level} 層</span><button type="button" data-aisle="${item.aisle}" data-name="${escapeHtml(item.name)}">看位置</button></div>`).join('')}`;
+        photoDemoResults.hidden = false;
+        photoDemoResults.querySelectorAll('button').forEach((button) => button.addEventListener('click', () => {
+          photoDialog.close();
+          showLocation(button.dataset.aisle, button.dataset.name);
+        }));
+        photoFeedback.textContent = '辨識完成。';
+      } catch (error) {
+        photoFeedback.textContent = '照片辨識失敗：' + error.message + '。可改用文字補充特徵搜尋。';
+      } finally {
+        photoSearch.disabled = false;
+      }
+    }
+    loadInventory();
+  </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "name": "hardware-store-finder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "npm run build && npx --yes serve public"
+  }
+}

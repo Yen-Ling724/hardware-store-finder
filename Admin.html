@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>工序五金｜商品管理</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f6f7f2; color: #1e2924; font: 14px/1.6 "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif; }
+    header { background: #18372d; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    header h1 { font-size: 17px; margin: 0; }
+    header a { color: #d7ec79; font-size: 12px; }
+    main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+    button, input, select, textarea { font: inherit; }
+    input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #d5ddd2; border-radius: 8px; background: #fff; }
+    button { cursor: pointer; border: 0; border-radius: 8px; padding: 8px 14px; background: #18372d; color: #fff; font-weight: 700; }
+    button.secondary { background: #fff; color: #18372d; border: 1px solid #c9d4c6; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .login { max-width: 360px; margin: 80px auto; background: #fff; padding: 24px; border-radius: 14px; box-shadow: 0 10px 30px rgba(27,50,39,.08); }
+    .login h2 { margin-top: 0; }
+    .login button { width: 100%; margin-top: 12px; }
+    .bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .bar input { flex: 1 1 220px; }
+    .bar select { width: auto; }
+    .count { color: #67746c; font-size: 12px; margin-bottom: 8px; }
+    .tablewrap { overflow-x: auto; background: #fff; border-radius: 12px; box-shadow: 0 6px 20px rgba(27,50,39,.06); }
+    table { border-collapse: collapse; width: 100%; min-width: 760px; }
+    th, td { text-align: left; padding: 9px 11px; border-bottom: 1px solid #edf0eb; white-space: nowrap; }
+    th { background: #f0f4ec; font-size: 12px; color: #4e5c52; }
+    td.name { white-space: normal; min-width: 180px; }
+    tr.hidden-item td { opacity: .45; }
+    .msg { margin: 10px 0; font-size: 13px; min-height: 20px; }
+    .msg.error { color: #b84c35; }
+    .msg.ok { color: #267448; }
+    dialog { width: min(560px, calc(100% - 24px)); border: 0; border-radius: 16px; padding: 0; box-shadow: 0 26px 90px rgba(0,0,0,.28); }
+    dialog::backdrop { background: rgba(13,27,21,.6); }
+    .form { padding: 22px; }
+    .form h2 { margin: 0 0 14px; font-size: 18px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }
+    .grid .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 12px; color: #4e5c52; font-weight: 700; margin-bottom: 3px; }
+    .check { display: flex; align-items: center; gap: 8px; }
+    .check input { width: auto; }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .photo-row { display: flex; gap: 12px; align-items: center; }
+    .photo-row img { width: 96px; height: 96px; object-fit: contain; border: 1px solid #e0e7dd; border-radius: 10px; background: #f1f4ed; }
+    .photo-row > div { flex: 1; display: grid; gap: 6px; }
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+    .tabs button { background: #fff; color: #18372d; border: 1px solid #c9d4c6; }
+    .tabs button.active { background: #18372d; color: #fff; }
+    .panel { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 6px 20px rgba(27,50,39,.06); max-width: 520px; }
+    .hint { color: #67746c; font-size: 12px; margin: 0 0 10px; }
+    td.danger button { color: #b84c35; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header><h1 id="headerTitle">後台管理</h1><a id="viewSite" href="#" target="_top">← 回到客人頁面</a></header>
+
+  <section class="login" id="loginBox">
+    <h2>管理登入</h2>
+    <label for="pwd">管理密碼</label>
+    <input id="pwd" type="password" autocomplete="current-password">
+    <div class="msg error" id="loginMsg"></div>
+    <button id="loginBtn" type="button">登入</button>
+  </section>
+
+  <main id="app" hidden>
+    <div class="tabs">
+      <button id="tabProducts" class="active" type="button">商品</button>
+      <button id="tabShelves" type="button">貨架配置</button>
+      <button id="tabSettings" type="button">店家設定</button>
+    </div>
+    <section id="paneProducts">
+    <div class="bar">
+      <input id="q" type="search" placeholder="搜尋商品名稱、品牌、貨架（例如 A-01）">
+      <select id="filterStatus"><option value="all">全部</option><option value="active">上架中</option><option value="hidden">已下架</option><option value="out">缺貨</option></select>
+      <button id="addBtn" type="button">＋ 新增商品</button>
+      <button class="secondary" id="reloadBtn" type="button">重新載入</button>
+    </div>
+    <div class="msg" id="appMsg" role="status"></div>
+    <div class="count" id="count"></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>商品</th><th>價格</th><th>庫存</th><th>位置</th><th>分類</th><th>狀態</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    </section>
+    <section id="paneShelves" hidden>
+      <p class="hint">依照你店面的實際樣子配置：「樓層／區域」可自由命名（例如 1F、2F、冷凍區、A 走道），每個貨架可設定不同層數。改貨架代號時，商品會自動跟著更新。</p>
+      <div class="bar"><button id="addShelfBtn" type="button">＋ 新增貨架</button></div>
+      <div class="msg" id="shelfMsg" role="status"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>樓層／區域</th><th>貨架代號</th><th>說明</th><th>層數</th><th>商品數</th><th></th></tr></thead>
+          <tbody id="shelfRows"></tbody>
+        </table>
+      </div>
+    </section>
+    <section id="paneSettings" hidden>
+      <div class="panel">
+        <label for="sName">店名（顯示在客人頁面）</label>
+        <input id="sName" maxlength="30">
+        <label for="sTagline" style="margin-top:10px">副標</label>
+        <input id="sTagline" maxlength="40">
+        <div class="msg" id="settingsMsg"></div>
+        <button id="saveSettings" type="button">儲存設定</button>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="shelfDialog">
+    <form class="form" id="shelfForm" method="dialog">
+      <h2 id="shelfFormTitle">新增貨架</h2>
+      <div class="grid">
+        <div><label for="shFloor">樓層／區域 *</label><input id="shFloor" list="floorList" required maxlength="10" placeholder="例如 1F"><datalist id="floorList"></datalist></div>
+        <div><label for="shId">貨架代號 *</label><input id="shId" required maxlength="12" placeholder="例如 A-01"></div>
+        <div class="full"><label for="shName">說明（放什麼商品）</label><input id="shName" maxlength="30"></div>
+        <div><label for="shLevels">層數 *</label><input id="shLevels" type="number" min="1" max="10" step="1" required></div>
+      </div>
+      <div class="msg error" id="shelfFormMsg"></div>
+      <div class="actions"><button class="secondary" id="shCancel" type="button">取消</button><button id="shSave" type="submit">儲存</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="editDialog">
+    <form class="form" id="editForm" method="dialog">
+      <h2 id="formTitle">編輯商品</h2>
+      <div class="grid">
+        <div class="full"><label for="fName">商品名稱 *</label><input id="fName" required maxlength="100"></div>
+        <div><label for="fBrand">品牌</label><input id="fBrand" maxlength="50"></div>
+        <div><label for="fIcon">圖示（一個 emoji）</label><input id="fIcon" maxlength="8"></div>
+        <div class="full"><label for="fSpec">規格</label><input id="fSpec" maxlength="120"></div>
+        <div class="full">
+          <label for="fPhoto">商品照片（可用手機直接拍）</label>
+          <div class="photo-row"><img id="photoPreview" alt="商品照片預覽" hidden><div><input id="fPhoto" type="file" accept="image/*"><button class="secondary" id="removePhoto" type="button" hidden>移除照片</button></div></div>
+        </div>
+        <div><label for="fPrice">價格 *</label><input id="fPrice" type="number" min="0" step="1" required></div>
+        <div><label for="fStock">庫存 *</label><input id="fStock" type="number" min="0" step="1" required></div>
+        <div><label for="fAisle">貨架 *</label><select id="fAisle"></select></div>
+        <div><label for="fLevel">層數 *（1 最下）</label><select id="fLevel"></select></div>
+        <div class="full"><label for="fCategory">分類</label><input id="fCategory" list="categoryList" maxlength="30"><datalist id="categoryList"></datalist></div>
+        <div class="full"><label for="fKeywords">關鍵字（空格分隔，別名、品牌、型號）</label><input id="fKeywords" maxlength="300"></div>
+        <div class="full"><label for="fFeatures">外觀／用途特徵（用「、」分隔）</label><textarea id="fFeatures" rows="2"></textarea></div>
+        <div class="full check"><input id="fActive" type="checkbox"><label for="fActive" style="margin:0">上架（取消勾選則客人看不到）</label></div>
+      </div>
+      <div class="msg error" id="formMsg"></div>
+      <div class="actions"><button class="secondary" id="cancelBtn" type="button">取消</button><button id="saveBtn" type="submit">儲存</button></div>
+    </form>
+  </dialog>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let password = '';
+    let products = [];
+    let shelves = [];
+    let settings = {};
+    let editing = null;
+    let editingShelf = null;
+    let imageValue = '';
+    let pendingPhoto = '';
+    const DEFAULT_CATEGORIES = ['電動工具','手工具','螺絲與固定','水電材料','油漆與耗材','安全防護','門窗五金','園藝與戶外','清潔與收納','建材與黏著'];
+
+    const driveThumb = (value) => {
+      if (value.startsWith('https:')) return value;
+      return value.length >= 20 ? 'https:' + String.fromCharCode(47, 47) + 'drive.google.com/thumbnail?id=' + encodeURIComponent(value) + '&sz=w300' : '';
+    };
+    function showPhoto(src) {
+      $('photoPreview').hidden = !src;
+      $('removePhoto').hidden = !src;
+      if (src) $('photoPreview').src = src;
+    }
+    function resizeImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, 800 / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#fff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          URL.revokeObjectURL(url);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        };
+        img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('無法讀取這張圖片')); };
+        img.src = url;
+      });
+    }
+
+    const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+    const call = (name, ...args) => new Promise((resolve, reject) => {
+      if (typeof google === 'undefined' || !google.script) { reject(new Error('請在部署後的網頁中使用管理頁')); return; }
+      google.script.run.withSuccessHandler(resolve).withFailureHandler((e) => reject(new Error(e && e.message ? e.message : String(e))))[name](...args);
+    });
+    const setMsg = (node, text, type) => { node.textContent = text; node.className = 'msg ' + (type || ''); };
+
+    $('fLevel').innerHTML = '';
+    $('viewSite').href = document.referrer || '#';
+
+    function applyAll(data) {
+      products = data.products;
+      shelves = data.shelves;
+      settings = data.settings;
+      const name = settings.storeName || '店內商品快找';
+      document.title = name + '｜後台管理';
+      $('headerTitle').textContent = name + '｜後台管理';
+      $('sName').value = settings.storeName || '';
+      $('sTagline').value = settings.tagline || '';
+      $('fAisle').innerHTML = shelves.map((s) => `<option value="${esc(s.id)}">${esc(s.floor)}｜${esc(s.id)} ${esc(s.name)}</option>`).join('');
+      const cats = [...new Set(DEFAULT_CATEGORIES.concat(products.map((p) => p.category).filter(Boolean)))];
+      $('categoryList').innerHTML = cats.map((c) => `<option value="${esc(c)}">`).join('');
+      $('floorList').innerHTML = [...new Set(shelves.map((s) => s.floor))].map((f) => `<option value="${esc(f)}">`).join('');
+      renderRows();
+      renderShelves();
+    }
+    function fillLevels(aisleId, selected) {
+      const shelf = shelves.find((s) => s.id === aisleId);
+      const n = shelf ? shelf.levels : 5;
+      $('fLevel').innerHTML = Array.from({ length: n }, (_, i) => n - i).map((v) => `<option value="${v}">第 ${v} 層${v === n && n > 1 ? '（上）' : v === 1 && n > 1 ? '（下）' : ''}</option>`).join('');
+      $('fLevel').value = String(Math.min(selected || 1, n));
+    }
+    function renderShelves() {
+      const counts = {};
+      products.forEach((p) => { counts[p.aisle] = (counts[p.aisle] || 0) + 1; });
+      $('shelfRows').innerHTML = shelves.map((s) => `
+        <tr><td>${esc(s.floor)}</td><td>${esc(s.id)}</td><td>${esc(s.name)}</td><td>${s.levels}</td><td>${counts[s.id] || 0}</td>
+        <td><button class="secondary" type="button" data-edit="${esc(s.id)}">編輯</button> <button class="secondary" type="button" data-del="${esc(s.id)}">刪除</button></td></tr>`).join('')
+        || '<tr><td colspan="6">還沒有貨架，請先新增</td></tr>';
+    }
+    function showTab(tab) {
+      ['Products', 'Shelves', 'Settings'].forEach((n) => {
+        $('pane' + n).hidden = n !== tab;
+        $('tab' + n).classList.toggle('active', n === tab);
+      });
+    }
+    function openShelfForm(shelf) {
+      editingShelf = shelf;
+      $('shelfFormTitle').textContent = shelf ? '編輯貨架' : '新增貨架';
+      $('shFloor').value = shelf ? shelf.floor : (shelves.length ? shelves[shelves.length - 1].floor : '');
+      $('shId').value = shelf ? shelf.id : '';
+      $('shName').value = shelf ? shelf.name : '';
+      $('shLevels').value = shelf ? shelf.levels : 5;
+      setMsg($('shelfFormMsg'), '');
+      $('shelfDialog').showModal();
+    }
+    async function saveShelf(event) {
+      event.preventDefault();
+      $('shSave').disabled = true;
+      try {
+        await call('adminSaveShelf', password, { originalId: editingShelf ? editingShelf.id : '', floor: $('shFloor').value, id: $('shId').value, name: $('shName').value, levels: $('shLevels').value });
+        $('shelfDialog').close();
+        await reload();
+        setMsg($('shelfMsg'), '貨架已儲存', 'ok');
+      } catch (err) { setMsg($('shelfFormMsg'), err.message, 'error'); } finally { $('shSave').disabled = false; }
+    }
+    async function deleteShelf(id) {
+      if (!confirm('確定刪除貨架 ' + id + '？')) return;
+      try {
+        await call('adminDeleteShelf', password, id);
+        await reload();
+        setMsg($('shelfMsg'), '已刪除貨架 ' + id, 'ok');
+      } catch (err) { setMsg($('shelfMsg'), err.message, 'error'); }
+    }
+    async function saveSettings() {
+      $('saveSettings').disabled = true;
+      setMsg($('settingsMsg'), '儲存中…');
+      try {
+        await call('adminSaveSettings', password, { storeName: $('sName').value, tagline: $('sTagline').value });
+        await reload();
+        setMsg($('settingsMsg'), '已儲存', 'ok');
+      } catch (err) { setMsg($('settingsMsg'), err.message, 'error'); } finally { $('saveSettings').disabled = false; }
+    }
+
+    async function login() {
+      const input = $('pwd').value;
+      if (!input) return;
+      $('loginBtn').disabled = true;
+      setMsg($('loginMsg'), '驗證中…');
+      try {
+        password = input;
+        applyAll(await call('adminGetAll', password));
+        $('loginBox').hidden = true;
+        $('app').hidden = false;
+      } catch (err) {
+        password = '';
+        setMsg($('loginMsg'), err.message, 'error');
+      } finally {
+        $('loginBtn').disabled = false;
+      }
+    }
+
+    async function reload() {
+      setMsg($('appMsg'), '載入中…');
+      try {
+        applyAll(await call('adminGetAll', password));
+        setMsg($('appMsg'), '');
+      } catch (err) { setMsg($('appMsg'), err.message, 'error'); }
+    }
+
+    function renderRows() {
+      const q = $('q').value.trim().toLowerCase();
+      const status = $('filterStatus').value;
+      const list = products.filter((p) => {
+        if (status === 'active' && !p.active) return false;
+        if (status === 'hidden' && p.active) return false;
+        if (status === 'out' && p.stock > 0) return false;
+        return !q || `${p.name} ${p.brand} ${p.aisle} ${p.category} ${p.keywords}`.toLowerCase().includes(q);
+      });
+      $('count').textContent = `共 ${products.length} 項，符合 ${list.length} 項（最多顯示前 200 項，請用搜尋縮小）`;
+      $('rows').innerHTML = list.slice(0, 200).map((p) => `
+        <tr class="${p.active ? '' : 'hidden-item'}">
+          <td class="name">${esc(p.icon)} ${esc(p.name)}<br><small>${esc(p.brand)} ${esc(p.spec)}</small></td>
+          <td>NT$ ${p.price.toLocaleString()}</td><td>${p.stock}</td>
+          <td>${esc(p.aisle)}・第 ${p.level} 層</td><td>${esc(p.category)}</td>
+          <td>${p.active ? '上架' : '下架'}</td>
+          <td><button class="secondary" type="button" data-row="${p.row}">編輯</button></td>
+        </tr>`).join('');
+    }
+
+    function openForm(product) {
+      editing = product;
+      $('formTitle').textContent = product ? '編輯商品' : '新增商品';
+      $('fName').value = product ? product.name : '';
+      $('fBrand').value = product ? product.brand : '';
+      $('fIcon').value = product ? product.icon : '📦';
+      $('fSpec').value = product ? product.spec : '';
+      $('fPrice').value = product ? product.price : '';
+      $('fStock').value = product ? product.stock : '';
+      $('fAisle').value = product ? product.aisle : (shelves[0] ? shelves[0].id : '');
+      fillLevels($('fAisle').value, product ? product.level : 3);
+      $('fCategory').value = product ? product.category : '';
+      $('fKeywords').value = product ? product.keywords : '';
+      $('fFeatures').value = product ? product.features.join('、') : '';
+      $('fActive').checked = product ? product.active : true;
+      imageValue = product ? (product.image || '') : '';
+      pendingPhoto = '';
+      $('fPhoto').value = '';
+      showPhoto(driveThumb(imageValue));
+      setMsg($('formMsg'), '');
+      $('editDialog').showModal();
+    }
+
+    async function save(event) {
+      event.preventDefault();
+      const item = {
+        row: editing ? editing.row : 0,
+        originalName: editing ? editing.name : '',
+        name: $('fName').value, brand: $('fBrand').value, icon: $('fIcon').value, spec: $('fSpec').value,
+        price: $('fPrice').value, stock: $('fStock').value, aisle: $('fAisle').value, level: $('fLevel').value,
+        category: $('fCategory').value, keywords: $('fKeywords').value, features: $('fFeatures').value,
+        active: $('fActive').checked
+      };
+      $('saveBtn').disabled = true;
+      setMsg($('formMsg'), '儲存中…');
+      try {
+        if (pendingPhoto) {
+          setMsg($('formMsg'), '上傳照片中…');
+          const uploaded = await call('adminUploadImage', password, pendingPhoto);
+          imageValue = uploaded.id;
+          pendingPhoto = '';
+        }
+        item.image = imageValue;
+        await call('adminSaveProduct', password, item);
+        $('editDialog').close();
+        await reload();
+        setMsg($('appMsg'), '已儲存', 'ok');
+      } catch (err) {
+        setMsg($('formMsg'), err.message, 'error');
+      } finally {
+        $('saveBtn').disabled = false;
+      }
+    }
+
+    $('loginBtn').addEventListener('click', login);
+    $('pwd').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+    $('q').addEventListener('input', renderRows);
+    $('filterStatus').addEventListener('change', renderRows);
+    $('reloadBtn').addEventListener('click', reload);
+    $('addBtn').addEventListener('click', () => { if (!shelves.length) { setMsg($('appMsg'), '請先到「貨架配置」新增貨架', 'error'); return; } openForm(null); });
+    $('fAisle').addEventListener('change', () => fillLevels($('fAisle').value, Number($('fLevel').value)));
+    $('tabProducts').addEventListener('click', () => showTab('Products'));
+    $('tabShelves').addEventListener('click', () => showTab('Shelves'));
+    $('tabSettings').addEventListener('click', () => showTab('Settings'));
+    $('addShelfBtn').addEventListener('click', () => openShelfForm(null));
+    $('shCancel').addEventListener('click', () => $('shelfDialog').close());
+    $('shelfForm').addEventListener('submit', saveShelf);
+    $('saveSettings').addEventListener('click', saveSettings);
+    $('shelfRows').addEventListener('click', (e) => {
+      const edit = e.target.closest('button[data-edit]');
+      const del = e.target.closest('button[data-del]');
+      if (edit) openShelfForm(shelves.find((s) => s.id === edit.dataset.edit));
+      if (del) deleteShelf(del.dataset.del);
+    });
+    $('cancelBtn').addEventListener('click', () => $('editDialog').close());
+    $('editForm').addEventListener('submit', save);
+    $('fPhoto').addEventListener('change', async () => {
+      const file = $('fPhoto').files[0];
+      if (!file) return;
+      try {
+        pendingPhoto = await resizeImage(file);
+        showPhoto(pendingPhoto);
+        setMsg($('formMsg'), '');
+      } catch (err) { setMsg($('formMsg'), err.message, 'error'); }
+    });
+    $('removePhoto').addEventListener('click', () => { imageValue = ''; pendingPhoto = ''; $('fPhoto').value = ''; showPhoto(''); });
+    $('rows').addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-row]');
+      if (btn) openForm(products.find((p) => p.row === Number(btn.dataset.row)));
+    });
+  </script>
+</body>
+</html>
